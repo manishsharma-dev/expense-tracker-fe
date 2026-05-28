@@ -25,6 +25,13 @@ const angularApp = new AngularNodeAppEngine();
  * ```
  */
 
+// ✅ Runtime config endpoint — reads from process.env, never baked into bundle
+app.get('/api/config', (_req, res) => {
+  res.json({
+    apiBaseUrl: process.env['API_BASE_URL'] ?? 'http://localhost:3000/api/v1',
+  });
+});
+
 /**
  * Serve static files from /browser
  */
