@@ -1,5 +1,5 @@
 // src/app/core/services/auth.service.ts
-import { Injectable, inject, PLATFORM_ID, signal, computed, REQUEST,Injector } from '@angular/core';
+import { Injectable, inject, PLATFORM_ID, signal, computed, REQUEST, Injector } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { STORAGE_KEY } from '../shared/constants';
 
@@ -13,18 +13,22 @@ export class AuthService {
 
   private resolveInitialToken(): string | null {
     if (this.isBrowser) {
-      return localStorage.getItem(STORAGE_KEY);
+      return localStorage.getItem(STORAGE_KEY) ?? this.getTokenFromCookie(document.cookie);
     }
     try {
       const request = this.injector.get(REQUEST, null, { optional: true });
       const cookieHeader = request?.headers?.get('cookie') ?? '';
-      const match = cookieHeader.match(
-        new RegExp(`(?:^|;\\s*)${STORAGE_KEY}=([^;]+)`)
-      );
-      return match?.[1] ?? null;
+      return this.getTokenFromCookie(cookieHeader);
     } catch {
       return null;
     }
+  }
+
+  private getTokenFromCookie(cookieHeader: string): string | null {
+    const match = cookieHeader.match(
+      new RegExp(`(?:^|;\\s*)${STORAGE_KEY}=([^;]+)`)
+    );
+    return match?.[1] ? decodeURIComponent(match[1]) : null;
   }
 
   login(token: string): void {
@@ -32,7 +36,7 @@ export class AuthService {
     if (this.isBrowser) {
       localStorage.setItem(STORAGE_KEY, token);
       const isSecure = location.protocol === 'https:' ? '; Secure' : '';
-      document.cookie = `${STORAGE_KEY}=${token}; path=/; SameSite=Strict${isSecure}`;
+      document.cookie = `${STORAGE_KEY}=${encodeURIComponent(token)}; path=/; SameSite=Strict${isSecure}`;
     }
   }
 

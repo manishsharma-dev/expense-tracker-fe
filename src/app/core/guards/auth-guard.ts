@@ -30,7 +30,5 @@ export const authGuard: CanActivateFn = () => {
     new RegExp(`(?:^|;\\s*)${STORAGE_KEY}=([^;]+)`)
   );
   const hasToken = !!match?.[1];
-  console.log('[GUARD SSR] hasToken:', hasToken);
-
-  return hasToken ? true : router.createUrlTree(['/auth']);
+  return hasToken ? true : router.createUrlTree(['/auth/login']);
 };
