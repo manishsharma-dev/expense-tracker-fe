@@ -1,5 +1,5 @@
 // src/app/app.config.ts
-import { ApplicationConfig, provideZoneChangeDetection, APP_INITIALIZER } from '@angular/core';
+import { ApplicationConfig, inject, provideAppInitializer } from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
@@ -7,14 +7,17 @@ import { routes } from './app.routes';
 import { apiInterceptor } from './core/interceptors/api-interceptor';
 import { HttpClient } from '@angular/common/http';
 import { Config } from './core/services/config';
+import { firstValueFrom } from 'rxjs';
 
 function loadConfig(http: HttpClient, config: Config) {
-  return () =>
-    http.get<{ apiBaseUrl: string }>('/api/config')
-      .toPromise()
-      .then(response => {
-        if (response) config.setApiBaseUrl(response.apiBaseUrl);
-      });
+  return firstValueFrom(http.get<{ apiBaseUrl: string }>('/api/config'))
+    .then((response) => {
+      config.setApiBaseUrl(response.apiBaseUrl);
+    })
+    .catch((error: unknown) => {
+      console.error('Failed to load config', error);
+      config.setApiBaseUrl('http://localhost:3000/api/v1');
+    });
 }
 
 export const appConfig: ApplicationConfig = {
@@ -26,11 +29,6 @@ export const appConfig: ApplicationConfig = {
       withFetch(),
       withInterceptors([apiInterceptor]),
     ),
-    {
-      provide: APP_INITIALIZER,
-      useFactory: loadConfig,
-      deps: [HttpClient, Config],
-      multi: true,
-    },
+    provideAppInitializer(() => loadConfig(inject(HttpClient), inject(Config))),
   ],
 };

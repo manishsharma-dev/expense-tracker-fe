@@ -1,10 +1,13 @@
-import { Component } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
-
+import { AuthService } from 'app/core/services/apis/auth.service';
+import { AuthService as AuthHelper } from 'app/core/services/auth';
+import { Router } from '@angular/router';
+import { take } from 'rxjs';
 @Component({
   selector: 'app-login',
   imports: [ReactiveFormsModule, MatCardModule, MatFormFieldModule, MatInputModule, MatButtonModule],
@@ -12,7 +15,13 @@ import { MatButtonModule } from '@angular/material/button';
   styleUrl: './login.scss',
 })
 export class Login {
+  protected readonly loginError = signal<string | null>(null);
   protected loginForm: FormGroup;
+
+  private readonly authService = inject(AuthService);
+  private readonly authHelper = inject(AuthHelper);
+  private readonly router = inject(Router);
+
 
   constructor() {
     this.loginForm = new FormGroup({
@@ -21,5 +30,23 @@ export class Login {
     });
   }
 
-  onSubmit(): void { }
+  onSubmit(): void {
+    this.loginError.set(null);
+    if (!this.loginForm.valid) {
+      this.loginForm.markAllAsTouched();
+      return;
+    }
+
+    this.authService.login(this.loginForm.value).pipe(take(1)).subscribe({
+      next: (response) => {
+        this.authHelper.login(response.data.token);
+        this.router.navigate(['/']);
+      },
+      error: (err) => {
+        this.loginError.set('Invalid email or password');
+        console.error('Login failed', err);
+      },
+    });
+
+  }
 }

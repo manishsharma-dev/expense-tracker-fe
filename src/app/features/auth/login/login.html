@@ -2,23 +2,26 @@
     <mat-card-header class="mb-3">
         <mat-card-title>Login</mat-card-title>
     </mat-card-header>
-    <mat-card-content>
-        <form [formGroup]="loginForm" class="d-flex flex-column align-items-center gap-2" (ngSubmit)="onSubmit()">
-        <mat-form-field appearance="fill" class="full-width">
+    <mat-card-content class="w-100">
+        <form [formGroup]="loginForm" class="d-flex flex-column align-items-center gap-1" (ngSubmit)="onSubmit()">
+        <mat-form-field appearance="fill" class="w-75">
             <mat-label>Email</mat-label>
             <input matInput type="email" name="email" formControlName="email" required>
             @if (loginForm.get('email')?.invalid && loginForm.get('email')?.touched) {
-                <mat-error>Enter a valid email address</mat-error>
+                <mat-error class="w-75">Enter a valid email address</mat-error>
             }
         </mat-form-field>
-        <mat-form-field appearance="fill" class="full-width">
+        <mat-form-field appearance="fill" class="w-75">
             <mat-label>Password</mat-label>
             <input matInput type="password" name="password" formControlName="password" required>
             @if (loginForm.get('password')?.invalid && loginForm.get('password')?.touched) {
-                <mat-error>Enter a valid password</mat-error>
+                <mat-error class="w-75">Enter a valid password</mat-error>
             }
         </mat-form-field>
-        <button matButton="elevated" color="primary" type="submit" class="full-width">Login</button>
+        @if (loginError()) {
+            <mat-error class="w-75">{{ loginError() }}</mat-error>
+        }
+        <button matButton="elevated" color="primary" type="submit" class="w-75">Login</button>
         </form>
     </mat-card-content>
 </mat-card>
