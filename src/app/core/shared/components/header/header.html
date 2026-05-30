@@ -1,0 +1,56 @@
+<header class="topbar">
+  <a class="brand" routerLink="/" aria-label="Xpense home">
+    <img
+      class="brand__logo brand__logo--light"
+      src="/assets/images/logo/logo_light_header.png"
+      alt=""
+      width="392"
+      height="105"
+    />
+    <img
+      class="brand__logo brand__logo--dark"
+      src="/assets/images/logo/logo_dark_header.png"
+      alt=""
+      width="392"
+      height="105"
+    />
+  </a>
+
+  <nav class="topbar__nav" aria-label="Primary navigation">
+    @for (item of navItems; track item.route) {
+      <a
+        class="topbar__link"
+        [routerLink]="item.route"
+        routerLinkActive="topbar__link--active"
+        [routerLinkActiveOptions]="{ exact: item.route === '/' }"
+      >
+        {{ item.label }}
+      </a>
+    }
+  </nav>
+
+  <div class="topbar__actions">
+    <button class="icon-btn icon-btn--theme" type="button" matTooltip="Toggle theme" (click)="toggleTheme()">
+      <mat-icon aria-hidden="true">dark_mode</mat-icon>
+    </button>
+    <button class="icon-btn icon-btn--notification" type="button" matTooltip="Notifications" aria-label="Notifications">
+      <mat-icon aria-hidden="true">notifications_none</mat-icon>
+      <span class="notification-dot" aria-hidden="true"></span>
+    </button>
+    <button class="avatar-btn" type="button" aria-label="User menu">JD</button>
+  </div>
+</header>
+
+<nav class="mobile-nav" aria-label="Mobile navigation">
+  @for (item of navItems; track item.route) {
+    <a
+      class="mobile-nav__link"
+      [routerLink]="item.route"
+      routerLinkActive="mobile-nav__link--active"
+      [routerLinkActiveOptions]="{ exact: item.route === '/' }"
+    >
+      <mat-icon aria-hidden="true">{{ item.icon }}</mat-icon>
+      <span>{{ item.label }}</span>
+    </a>
+  }
+</nav>

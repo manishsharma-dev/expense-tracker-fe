@@ -13,6 +13,26 @@ export const routes: Routes = [
         loadComponent: () => import('./features/pages/dashboard/dashboard')
           .then(m => m.Dashboard),
       },
+      {
+        path: 'expenses',
+        loadComponent: () => import('./features/pages/expenses/expenses')
+          .then(m => m.Expenses),
+      },
+      {
+        path: 'budget',
+        loadComponent: () => import('./features/pages/budget/budget')
+          .then(m => m.Budget),
+      },
+      {
+        path: 'reports',
+        loadComponent: () => import('./features/pages/reports/reports')
+          .then(m => m.Reports),
+      },
+      {
+        path: 'earnings',
+        loadComponent: () => import('./features/pages/earnings/earnings')
+          .then(m => m.Earnings),
+      }
     ],
   },
   {

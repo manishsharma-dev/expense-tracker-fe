@@ -20,7 +20,7 @@ export const authGuard: CanActivateFn = () => {
   if (isPlatformBrowser(platformId)) {
     return authService.isLoggedIn()
       ? true
-      : router.createUrlTree(['/login']);
+      : router.createUrlTree(['/auth/login']);
   }
 
   // ✅ Server — read cookie from REQUEST

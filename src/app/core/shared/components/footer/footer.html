@@ -1,0 +1,23 @@
+<!-- src/app/features/pages/main/footer/footer.component.html -->
+<footer class="footer" role="contentinfo">
+  <div class="footer__inner">
+
+    <div class="footer__brand">
+      <mat-icon class="footer__brand-icon">account_balance</mat-icon>
+      <span class="footer__brand-name">FinTrack</span>
+    </div>
+
+    <nav class="footer__links" aria-label="Footer navigation">
+      <a class="footer__link" routerLink="/settings">Settings</a>
+      <span class="footer__dot" aria-hidden="true">·</span>
+      <a class="footer__link" routerLink="/help">Help</a>
+      <span class="footer__dot" aria-hidden="true">·</span>
+      <a class="footer__link" routerLink="/privacy">Privacy</a>
+    </nav>
+
+    <p class="footer__copy">
+      &copy; {{ year }} FinTrack. All rights reserved.
+    </p>
+
+  </div>
+</footer>

@@ -5,7 +5,7 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
   selector: 'app-loader',
   imports: [MatProgressSpinnerModule],
   templateUrl: `./loader.html`,
-  styleUrl: './loader.css',
+  styleUrl: './loader.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class Loader { }
