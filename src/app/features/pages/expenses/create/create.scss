@@ -1,0 +1,320 @@
+.create-expense {
+  max-width: 860px;
+  margin: 0 auto;
+  color: var(--mat-sys-on-surface);
+}
+
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  margin-bottom: 22px;
+
+  h1 {
+    margin: 0 0 5px;
+    font-size: 28px;
+    font-weight: 800;
+    line-height: 1.1;
+  }
+
+  p {
+    margin: 0;
+    color: var(--mat-sys-on-surface-variant);
+    font-size: 14px;
+  }
+}
+
+.back-button {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: var(--mat-sys-surface-container-low);
+  color: var(--mat-sys-on-surface);
+  text-decoration: none;
+}
+
+.form-card {
+  --mdc-outlined-card-container-color: var(--mat-sys-surface-container-low, var(--mat-sys-surface));
+  --mdc-outlined-card-outline-color: var(--mat-sys-outline-variant);
+  border-radius: 12px;
+  box-shadow: var(--mat-sys-level1);
+
+  mat-card-content {
+    padding: 26px;
+  }
+}
+
+.expense-form {
+  display: grid;
+  gap: 22px;
+}
+
+.form-section {
+  display: grid;
+  gap: 12px;
+
+  h2 {
+    margin: 0;
+    color: var(--mat-sys-on-surface-variant);
+    font-size: 12px;
+    font-weight: 800;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  h3 {
+    margin: 0 0 10px;
+    font-size: 14px;
+    font-weight: 800;
+  }
+}
+
+.two-column,
+.category-payment-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.full-field {
+  width: 100%;
+}
+
+.date-field {
+  max-width: 300px;
+}
+
+:host ::ng-deep .compact-field .mat-mdc-form-field-subscript-wrapper {
+  display: none;
+}
+
+.category-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.category-tile {
+  display: grid;
+  justify-items: center;
+  gap: 6px;
+  min-height: 76px;
+  padding: 10px 6px;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 8px;
+  background: var(--mat-sys-surface-container-lowest, var(--mat-sys-surface));
+  color: var(--mat-sys-on-surface);
+  cursor: pointer;
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+
+  span {
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  &--selected {
+    border-color: var(--mat-sys-on-surface);
+    box-shadow: inset 0 0 0 1px var(--mat-sys-on-surface);
+  }
+}
+
+.category-tile--orange mat-icon,
+.category-tile--amber mat-icon,
+.category-tile--yellow mat-icon {
+  color: var(--mat-sys-tertiary);
+}
+
+.category-tile--teal mat-icon,
+.category-tile--blue mat-icon {
+  color: var(--mat-sys-primary);
+}
+
+.category-tile--purple mat-icon {
+  color: var(--mat-sys-secondary);
+}
+
+.category-tile--pink mat-icon {
+  color: var(--mat-sys-error);
+}
+
+.category-tile--green mat-icon {
+  color: var(--mat-sys-inverse-primary);
+}
+
+.payment-list {
+  display: grid;
+  gap: 10px;
+}
+
+:host ::ng-deep .payment-list .mat-mdc-radio-button {
+  display: block;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 8px;
+  background: var(--mat-sys-surface-container-lowest, var(--mat-sys-surface));
+}
+
+:host ::ng-deep .payment-list .mdc-form-field {
+  width: 100%;
+}
+
+:host ::ng-deep .payment-list .mdc-label {
+  width: 100%;
+}
+
+.payment-option {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 700;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.add-card-button {
+  width: fit-content;
+  margin-top: 10px;
+  border: 0;
+  background: transparent;
+  color: var(--mat-sys-on-surface-variant);
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+}
+
+.receipt-dropzone {
+  position: relative;
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  min-height: 150px;
+  border: 1px dashed var(--mat-sys-outline);
+  border-radius: 10px;
+  background: var(--mat-sys-surface-container-lowest, var(--mat-sys-surface));
+  color: var(--mat-sys-on-surface-variant);
+  cursor: pointer;
+  text-align: center;
+
+  mat-icon {
+    color: var(--mat-sys-on-surface);
+  }
+
+  strong {
+    color: var(--mat-sys-on-surface);
+    font-size: 14px;
+  }
+
+  span {
+    color: var(--mat-sys-primary);
+    font-weight: 800;
+  }
+
+  small {
+    font-size: 12px;
+  }
+}
+
+.receipt-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.form-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 4px;
+
+  button:last-child {
+    --mdc-filled-button-container-shape: 8px;
+  }
+}
+
+@media (max-width: 760px) {
+  .create-expense {
+    max-width: none;
+    margin: 0;
+  }
+
+  .page-header {
+    margin-bottom: 16px;
+
+    h1 {
+      font-size: 22px;
+    }
+
+    p {
+      font-size: 12px;
+    }
+  }
+
+  .form-card {
+    border-right: 0;
+    border-left: 0;
+    border-radius: 0;
+    box-shadow: none;
+
+    mat-card-content {
+      padding: 18px 16px;
+    }
+  }
+
+  .expense-form {
+    gap: 20px;
+  }
+
+  .two-column,
+  .category-payment-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .date-field {
+    max-width: none;
+  }
+
+  .category-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .category-tile {
+    min-height: 68px;
+  }
+
+  .receipt-dropzone {
+    min-height: 136px;
+  }
+
+  .form-actions {
+    display: grid;
+    gap: 10px;
+
+    button,
+    a {
+      width: 100%;
+    }
+
+    button:last-child {
+      order: -3;
+    }
+
+    button:nth-child(2) {
+      order: -2;
+    }
+  }
+}

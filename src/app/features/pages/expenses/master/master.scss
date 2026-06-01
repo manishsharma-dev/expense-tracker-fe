@@ -1,0 +1,335 @@
+.expenses-page {
+  color: var(--mat-sys-on-surface);
+}
+
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 24px;
+
+  h1 {
+    margin: 0 0 6px;
+    font-size: clamp(26px, 3vw, 32px);
+    font-weight: 800;
+    line-height: 1.1;
+  }
+
+  p {
+    margin: 0;
+    color: var(--mat-sys-on-surface-variant);
+    font-size: 15px;
+  }
+}
+
+.add-button {
+  flex: 0 0 auto;
+  --mdc-filled-button-container-shape: 8px;
+}
+
+.filters-card,
+.expenses-table-card,
+.expense-card {
+  --mdc-outlined-card-container-color: var(--mat-sys-surface-container-low, var(--mat-sys-surface));
+  --mdc-outlined-card-outline-color: var(--mat-sys-outline-variant);
+  border-radius: 12px;
+  box-shadow: var(--mat-sys-level1);
+}
+
+.filters-card {
+  margin-bottom: 18px;
+
+  mat-card-content {
+    display: grid;
+    grid-template-columns: minmax(240px, 1fr) repeat(4, minmax(130px, 160px));
+    gap: 12px;
+    padding: 18px;
+  }
+}
+
+.search-field {
+  min-width: 0;
+}
+
+:host ::ng-deep .filters-card .mat-mdc-form-field-subscript-wrapper {
+  display: none;
+}
+
+.expenses-table-card {
+  overflow: hidden;
+
+  mat-card-content {
+    padding: 0;
+  }
+}
+
+.expenses-table {
+  width: 100%;
+  background: transparent;
+
+  th {
+    color: var(--mat-sys-on-surface-variant);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.03em;
+    text-transform: uppercase;
+  }
+
+  td {
+    color: var(--mat-sys-on-surface-variant);
+    font-size: 14px;
+  }
+
+  th,
+  td {
+    border-bottom-color: var(--mat-sys-outline-variant);
+  }
+}
+
+.expense-title,
+.expense-card__top,
+.expense-card__meta,
+.pagination,
+.table-footer,
+.mobile-footer {
+  display: flex;
+  align-items: center;
+}
+
+.expense-title {
+  gap: 12px;
+
+  strong {
+    display: block;
+    color: var(--mat-sys-on-surface);
+    font-weight: 800;
+  }
+
+  small {
+    color: var(--mat-sys-on-surface-variant);
+    font-size: 12px;
+  }
+}
+
+.expense-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  flex: 0 0 auto;
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.expense-icon--purple {
+  background: color-mix(in srgb, var(--mat-sys-secondary) 20%, transparent);
+  color: var(--mat-sys-secondary);
+}
+
+.expense-icon--teal,
+.expense-icon--blue {
+  background: color-mix(in srgb, var(--mat-sys-primary) 18%, transparent);
+  color: var(--mat-sys-primary);
+}
+
+.expense-icon--orange,
+.expense-icon--amber {
+  background: color-mix(in srgb, var(--mat-sys-tertiary) 20%, transparent);
+  color: var(--mat-sys-tertiary);
+}
+
+.expense-icon--pink {
+  background: color-mix(in srgb, var(--mat-sys-error) 14%, transparent);
+  color: var(--mat-sys-error);
+}
+
+.expense-icon--green {
+  background: color-mix(in srgb, var(--mat-sys-inverse-primary) 20%, transparent);
+  color: var(--mat-sys-inverse-primary);
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  min-height: 22px;
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.pill--category {
+  background: color-mix(in srgb, var(--mat-sys-secondary) 18%, transparent);
+  color: var(--mat-sys-secondary);
+}
+
+.pill--status {
+  border: 1px solid color-mix(in srgb, var(--mat-sys-primary) 36%, transparent);
+  background: color-mix(in srgb, var(--mat-sys-primary) 18%, transparent);
+  color: var(--mat-sys-primary);
+}
+
+.pill--pending {
+  border-color: color-mix(in srgb, var(--mat-sys-tertiary) 42%, transparent);
+  background: color-mix(in srgb, var(--mat-sys-tertiary) 20%, transparent);
+  color: var(--mat-sys-tertiary);
+}
+
+.amount {
+  color: var(--mat-sys-error);
+  font-weight: 800;
+}
+
+.table-footer {
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px 18px;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 13px;
+}
+
+.pagination {
+  gap: 8px;
+}
+
+.mobile-expenses {
+  display: none;
+}
+
+@media (max-width: 1100px) {
+  .filters-card mat-card-content {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .search-field {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 760px) {
+  .page-header {
+    flex-direction: column;
+    gap: 14px;
+    margin-bottom: 18px;
+
+    h1 {
+      font-size: 26px;
+    }
+  }
+
+  .add-button {
+    width: 100%;
+  }
+
+  .filters-card {
+    margin-bottom: 16px;
+
+    mat-card-content {
+      grid-template-columns: repeat(4, minmax(120px, 1fr));
+      gap: 10px;
+      overflow-x: auto;
+      padding: 12px;
+    }
+  }
+
+  .search-field {
+    grid-column: 1 / -1;
+    min-width: 100%;
+  }
+
+  .expenses-table-card {
+    display: none;
+  }
+
+  .mobile-expenses {
+    display: grid;
+    gap: 12px;
+  }
+
+  .expense-card mat-card-content {
+    display: grid;
+    grid-template-columns: 40px minmax(0, 1fr) auto;
+    gap: 12px;
+    padding: 14px;
+  }
+
+  .expense-card__body {
+    min-width: 0;
+
+    > small {
+      display: block;
+      margin-top: 3px;
+      color: var(--mat-sys-on-surface-variant);
+    }
+  }
+
+  .expense-card__top {
+    justify-content: space-between;
+    gap: 10px;
+
+    strong:first-child {
+      color: var(--mat-sys-on-surface);
+      overflow-wrap: anywhere;
+    }
+  }
+
+  .expense-card__meta {
+    flex-wrap: wrap;
+    gap: 7px;
+    margin-top: 10px;
+    color: var(--mat-sys-on-surface-variant);
+    font-size: 12px;
+  }
+
+  .expense-card__actions {
+    display: flex;
+    align-self: end;
+    gap: 2px;
+
+    button,
+    a {
+      width: 30px;
+      height: 30px;
+      padding: 0;
+    }
+
+    mat-icon {
+      font-size: 17px;
+      width: 17px;
+      height: 17px;
+    }
+  }
+
+  .mobile-footer {
+    flex-direction: column;
+    justify-content: center;
+    gap: 10px;
+    padding: 4px 0 12px;
+    color: var(--mat-sys-on-surface-variant);
+    font-size: 12px;
+    text-align: center;
+  }
+}
+
+@media (max-width: 420px) {
+  .filters-card mat-card-content {
+    grid-template-columns: repeat(4, minmax(104px, 1fr));
+  }
+
+  .expense-card mat-card-content {
+    grid-template-columns: 36px minmax(0, 1fr);
+  }
+
+  .expense-card__actions {
+    grid-column: 2;
+    justify-self: end;
+  }
+}

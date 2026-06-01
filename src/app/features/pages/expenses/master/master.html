@@ -1,0 +1,202 @@
+<section class="expenses-page">
+  <header class="page-header">
+    <div>
+      <h1>Expenses</h1>
+      <p>Track and manage all your transactions</p>
+    </div>
+    <a mat-flat-button routerLink="/expenses/create" class="add-button">
+      <mat-icon aria-hidden="true">add_circle</mat-icon>
+      Add Expense
+    </a>
+  </header>
+
+  <mat-card class="filters-card" appearance="outlined">
+    <mat-card-content>
+      <mat-form-field appearance="outline" class="search-field">
+        <mat-icon matPrefix aria-hidden="true">search</mat-icon>
+        <input matInput type="search" placeholder="Search expenses..." />
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Category</mat-label>
+        <mat-select value="all">
+          <mat-option value="all">Category</mat-option>
+          <mat-option value="food">Food & Dining</mat-option>
+          <mat-option value="transport">Transport</mat-option>
+          <mat-option value="entertainment">Entertainment</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Period</mat-label>
+        <mat-select value="month">
+          <mat-option value="month">This Month</mat-option>
+          <mat-option value="week">This Week</mat-option>
+          <mat-option value="year">This Year</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Status</mat-label>
+        <mat-select value="all">
+          <mat-option value="all">Status</mat-option>
+          <mat-option value="completed">Completed</mat-option>
+          <mat-option value="pending">Pending</mat-option>
+        </mat-select>
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>Sort</mat-label>
+        <mat-select value="newest">
+          <mat-option value="newest">Newest First</mat-option>
+          <mat-option value="oldest">Oldest First</mat-option>
+          <mat-option value="highest">Highest Amount</mat-option>
+        </mat-select>
+      </mat-form-field>
+    </mat-card-content>
+  </mat-card>
+
+  <mat-card class="expenses-table-card" appearance="outlined">
+    <mat-card-content>
+      <table mat-table [dataSource]="expenses" class="expenses-table">
+        <ng-container matColumnDef="select">
+          <th mat-header-cell *matHeaderCellDef>
+            <mat-checkbox aria-label="Select all expenses"></mat-checkbox>
+          </th>
+          <td mat-cell *matCellDef="let expense">
+            <mat-checkbox [attr.aria-label]="'Select ' + expense.description"></mat-checkbox>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="date">
+          <th mat-header-cell *matHeaderCellDef>Date</th>
+          <td mat-cell *matCellDef="let expense">{{ expense.date }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="description">
+          <th mat-header-cell *matHeaderCellDef>Description</th>
+          <td mat-cell *matCellDef="let expense">
+            <span class="expense-title">
+              <span class="expense-icon expense-icon--{{ expense.color }}">
+                <mat-icon aria-hidden="true">{{ expense.icon }}</mat-icon>
+              </span>
+              <span>
+                <strong>{{ expense.description }}</strong>
+                <small>{{ expense.vendor }}</small>
+              </span>
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="category">
+          <th mat-header-cell *matHeaderCellDef>Category</th>
+          <td mat-cell *matCellDef="let expense">
+            <span class="pill pill--category">{{ expense.category }}</span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="paymentMethod">
+          <th mat-header-cell *matHeaderCellDef>Payment Method</th>
+          <td mat-cell *matCellDef="let expense">{{ expense.paymentMethod }}</td>
+        </ng-container>
+
+        <ng-container matColumnDef="amount">
+          <th mat-header-cell *matHeaderCellDef>Amount</th>
+          <td mat-cell *matCellDef="let expense">
+            <strong class="amount">{{ expense.amount }}</strong>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="status">
+          <th mat-header-cell *matHeaderCellDef>Status</th>
+          <td mat-cell *matCellDef="let expense">
+            <span class="pill pill--status" [class.pill--pending]="expense.status === 'Pending'">
+              {{ expense.status }}
+            </span>
+          </td>
+        </ng-container>
+
+        <ng-container matColumnDef="actions">
+          <th mat-header-cell *matHeaderCellDef>Actions</th>
+          <td mat-cell *matCellDef="let expense">
+            <a mat-icon-button [routerLink]="['/expenses', expense.id]" [attr.aria-label]="'Edit ' + expense.description">
+              <mat-icon aria-hidden="true">edit</mat-icon>
+            </a>
+            <button mat-icon-button type="button" [attr.aria-label]="'Delete ' + expense.description">
+              <mat-icon aria-hidden="true">delete</mat-icon>
+            </button>
+          </td>
+        </ng-container>
+
+        <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+        <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+      </table>
+
+      <div class="table-footer">
+        <span>Showing 1-8 out of 47 expenses</span>
+        <div class="pagination">
+          <button mat-stroked-button type="button">
+            <mat-icon aria-hidden="true">chevron_left</mat-icon>
+            Previous
+          </button>
+          <button mat-flat-button type="button">1</button>
+          <button mat-stroked-button type="button">2</button>
+          <button mat-stroked-button type="button">3</button>
+          <button mat-stroked-button type="button">5</button>
+          <button mat-stroked-button type="button">
+            Next
+            <mat-icon aria-hidden="true">chevron_right</mat-icon>
+          </button>
+        </div>
+      </div>
+    </mat-card-content>
+  </mat-card>
+
+  <section class="mobile-expenses" aria-label="Expense list">
+    @for (expense of expenses; track expense.description) {
+      <mat-card class="expense-card" appearance="outlined">
+        <mat-card-content>
+          <span class="expense-icon expense-icon--{{ expense.color }}">
+            <mat-icon aria-hidden="true">{{ expense.icon }}</mat-icon>
+          </span>
+          <div class="expense-card__body">
+            <div class="expense-card__top">
+              <strong>{{ expense.description }}</strong>
+              <strong class="amount">{{ expense.amount }}</strong>
+            </div>
+            <small>{{ expense.vendor }}</small>
+            <div class="expense-card__meta">
+              <span>{{ expense.date }}</span>
+              <span class="pill pill--category">{{ expense.category }}</span>
+              <span class="pill pill--status" [class.pill--pending]="expense.status === 'Pending'">
+                {{ expense.status }}
+              </span>
+            </div>
+          </div>
+          <div class="expense-card__actions">
+            <a mat-icon-button [routerLink]="['/expenses', expense.id]" [attr.aria-label]="'Edit ' + expense.description">
+              <mat-icon aria-hidden="true">edit</mat-icon>
+            </a>
+            <button mat-icon-button type="button" [attr.aria-label]="'Delete ' + expense.description">
+              <mat-icon aria-hidden="true">delete</mat-icon>
+            </button>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    }
+
+    <div class="mobile-footer">
+      <span>Showing 1-8 out of 47 expenses</span>
+      <div class="pagination">
+        <button mat-stroked-button type="button">
+          <mat-icon aria-hidden="true">chevron_left</mat-icon>
+          Previous
+        </button>
+        <button mat-stroked-button type="button">
+          Next
+          <mat-icon aria-hidden="true">chevron_right</mat-icon>
+        </button>
+      </div>
+    </div>
+  </section>
+</section>

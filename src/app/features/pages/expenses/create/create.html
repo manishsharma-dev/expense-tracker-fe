@@ -1,0 +1,116 @@
+<section class="create-expense">
+  <header class="page-header">
+    <a class="back-button" routerLink="/expenses" aria-label="Back to expenses">
+      <mat-icon aria-hidden="true">arrow_back</mat-icon>
+    </a>
+    <div>
+      <h1>Add New Expense</h1>
+      <p>Fill in the details to record a new expense</p>
+    </div>
+  </header>
+
+  <mat-card class="form-card" appearance="outlined">
+    <mat-card-content>
+      <form class="expense-form">
+        <section class="form-section">
+          <h2>Expense Details</h2>
+
+          <mat-form-field appearance="outline" class="full-field compact-field">
+            <mat-label>Description</mat-label>
+            <mat-icon matPrefix aria-hidden="true">description</mat-icon>
+            <input matInput placeholder="e.g. Grocery shopping at Whole Foods" />
+          </mat-form-field>
+
+          <div class="two-column">
+            <mat-form-field appearance="outline" class="compact-field">
+              <mat-label>Amount</mat-label>
+              <input matInput type="number" placeholder="$ 0.00" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline" class="compact-field">
+              <mat-label>Currency</mat-label>
+              <mat-select value="usd">
+                <mat-option value="usd">USD — US Dollar</mat-option>
+                <mat-option value="inr">INR — Indian Rupee</mat-option>
+                <mat-option value="eur">EUR — Euro</mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+
+          <mat-form-field appearance="outline" class="compact-field date-field">
+            <mat-label>Date</mat-label>
+            <input matInput [matDatepicker]="picker" placeholder="Oct 15, 2025" />
+            <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
+            <mat-datepicker #picker></mat-datepicker>
+          </mat-form-field>
+        </section>
+
+        <section class="form-section">
+          <h2>Category & Payment</h2>
+          <div class="category-payment-grid">
+            <div>
+              <h3>Category</h3>
+              <div class="category-grid" role="radiogroup" aria-label="Expense category">
+                @for (category of categories; track category.value) {
+                  <button
+                    class="category-tile category-tile--{{ category.color }}"
+                    [class.category-tile--selected]="category.value === 'food'"
+                    type="button"
+                  >
+                    <mat-icon aria-hidden="true">{{ category.icon }}</mat-icon>
+                    <span>{{ category.label }}</span>
+                  </button>
+                }
+              </div>
+            </div>
+
+            <div>
+              <h3>Payment Method</h3>
+              <mat-radio-group class="payment-list" value="visa" aria-label="Payment method">
+                @for (method of paymentMethods; track method.value) {
+                  <mat-radio-button [value]="method.value">
+                    <span class="payment-option">
+                      <mat-icon aria-hidden="true">{{ method.icon }}</mat-icon>
+                      {{ method.label }}
+                    </span>
+                  </mat-radio-button>
+                }
+              </mat-radio-group>
+              <button class="add-card-button" type="button">+ Add new card</button>
+            </div>
+          </div>
+        </section>
+
+        <section class="form-section">
+          <h2>Notes (optional)</h2>
+          <mat-checkbox>Add any additional notes or tags...</mat-checkbox>
+        </section>
+
+        <section class="form-section">
+          <h2>Receipt</h2>
+          <label class="receipt-dropzone" for="receipt-upload">
+            <mat-icon aria-hidden="true">upload</mat-icon>
+            <strong>Upload a receipt or screenshot</strong>
+            <span>Drag & drop here or browse files</span>
+            <small>Supports JPG, PNG, WebP, PDF up to 10MB</small>
+            <input
+              id="receipt-upload"
+              class="receipt-input"
+              type="file"
+              accept="image/*,.pdf"
+            />
+          </label>
+        </section>
+
+        <div class="form-actions">
+          <a mat-button routerLink="/expenses">Cancel</a>
+          <button mat-button type="button">Save as Draft</button>
+          <button mat-flat-button type="button">
+            <mat-icon aria-hidden="true">add_circle</mat-icon>
+            Add Expense
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+</section>

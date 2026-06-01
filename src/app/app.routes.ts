@@ -17,6 +17,23 @@ export const routes: Routes = [
         path: 'expenses',
         loadComponent: () => import('./features/pages/expenses/expenses')
           .then(m => m.Expenses),
+        children: [
+          {
+            path : '',
+            loadComponent: () => import('./features/pages/expenses/master/master')
+              .then(m => m.Master),
+          },
+          {
+            path: 'create',
+            loadComponent: () => import('./features/pages/expenses/create/create')
+              .then(m => m.Create),
+          },
+          {
+            path: ':id',
+            loadComponent: () => import('./features/pages/expenses/detail/detail')
+              .then(m => m.Detail),
+          }
+        ]
       },
       {
         path: 'budget',
