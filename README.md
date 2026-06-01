@@ -1,59 +1,81 @@
-# ExpenseTrackerFe
+# Xpense Frontend
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.2.11.
+Angular SSR frontend for the Xpense expense tracker.
 
-## Development server
+Live app: [https://expense-tracker-fe-o0wf.onrender.com](https://expense-tracker-fe-o0wf.onrender.com)
 
-To start a local development server, run:
+## Screenshots
 
-```bash
-ng serve
-```
+![Dashboard desktop](docs/screenshots/dashboard-desktop.png)
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+![Dashboard mobile](docs/screenshots/dashboard-mobile.png)
 
-## Code scaffolding
+![Create expense](docs/screenshots/expense-create.png)
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+## Tech Stack
 
-```bash
-ng generate component component-name
-```
+- Angular 21
+- Angular SSR with Express
+- Angular Material
+- Chart.js
+- Bootstrap utility CSS
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+## Local Development
 
-```bash
-ng generate --help
-```
-
-## Building
-
-To build the project run:
+Install dependencies:
 
 ```bash
-ng build
+npm install
 ```
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
-
-## Running unit tests
-
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+Start the development server:
 
 ```bash
-ng test
+npm run start
 ```
 
-## Running end-to-end tests
+Open:
 
-For end-to-end (e2e) testing, run:
+```text
+http://localhost:4200
+```
+
+## Environment
+
+The SSR server exposes runtime config at `/api/config`.
+
+Set this in `.env` or on the deployment provider:
+
+```text
+API_BASE_URL=https://expense-tracker-be-woo0.onrender.com/api
+```
+
+## Build
 
 ```bash
-ng e2e
+npm run build
 ```
 
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
+## Run SSR Build
 
-## Additional Resources
+```bash
+npm run serve:ssr:expense-tracker-fe
+```
 
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+## Render Deployment
+
+Render service settings:
+
+```text
+Runtime: Node
+Build Command: npm ci && npm run build
+Start Command: npm run serve:ssr:expense-tracker-fe
+```
+
+Environment variable:
+
+```text
+API_BASE_URL=https://expense-tracker-be-woo0.onrender.com/api
+```
+
+If the Render hostname changes, add the new host to `security.allowedHosts` in `angular.json`.
