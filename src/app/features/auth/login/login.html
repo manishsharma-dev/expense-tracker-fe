@@ -1,27 +1,72 @@
-<mat-card class="login-card d-flex flex-column align-items-center justify-content-center">
-    <mat-card-header class="mb-3">
-        <mat-card-title>Login</mat-card-title>
-    </mat-card-header>
-    <mat-card-content class="w-100">
-        @switch(currentLoginMethod()){
-            @case(LoginMethod.EMAIL){
-                <app-email-login />
-            }
-            @default{
-                <app-mobile-login />
-            }
-        }
-    </mat-card-content>
-    <mat-card-footer>
-        <a>
-            @switch(currentLoginMethod()){
-                @case(LoginMethod.EMAIL){
-                   <a ngSkipHydration (click)="setLogin(LoginMethod.MOBILE)">Login with mobilett</a> 
-                }
-                @default{
-                    <a ngSkipHydration (click)="setLogin(LoginMethod.EMAIL)">Login with emailtt</a> 
-                }
-            }
-        </a>
-    </mat-card-footer>
+<mat-card class="login-card" appearance="outlined">
+  <mat-card-content>
+    <header class="login-header">
+      <img
+        class="login-logo login-logo--light"
+        src="/assets/images/logo/logo_light_header.png"
+        alt="Xpense"
+        width="392"
+        height="105"
+      />
+      <img
+        class="login-logo login-logo--dark"
+        src="/assets/images/logo/logo_dark_header.png"
+        alt="Xpense"
+        width="392"
+        height="105"
+      />
+      <h1>Welcome back</h1>
+      <p>Sign in to continue tracking your expenses.</p>
+    </header>
+
+    <div class="login-switch" role="tablist" aria-label="Login method">
+      <button
+        type="button"
+        [class.login-switch__button--active]="currentLoginMethod() === LoginMethod.EMAIL"
+        class="login-switch__button"
+        (click)="setLogin(LoginMethod.EMAIL)"
+      >
+        <mat-icon aria-hidden="true">mail</mat-icon>
+        Email
+      </button>
+      <button
+        type="button"
+        [class.login-switch__button--active]="currentLoginMethod() === LoginMethod.MOBILE"
+        class="login-switch__button"
+        (click)="setLogin(LoginMethod.MOBILE)"
+      >
+        <mat-icon aria-hidden="true">phone_iphone</mat-icon>
+        Phone
+      </button>
+    </div>
+
+    @switch(currentLoginMethod()) {
+      @case(LoginMethod.EMAIL) {
+        <app-email-login />
+      }
+      @default {
+        <app-mobile-login />
+      }
+    }
+
+    <div class="divider">
+      <span>or continue with</span>
+    </div>
+
+    <div class="social-actions">
+      <button mat-stroked-button type="button" class="social-button">
+        <span class="social-mark">G</span>
+        Google
+      </button>
+      <button mat-stroked-button type="button" class="social-button">
+        <span class="social-mark social-mark--facebook">f</span>
+        Facebook
+      </button>
+    </div>
+
+    <p class="register-line">
+      New to Xpense?
+      <a routerLink="/auth/register">Create an account</a>
+    </p>
+  </mat-card-content>
 </mat-card>

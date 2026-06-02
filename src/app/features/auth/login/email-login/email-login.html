@@ -1,22 +1,30 @@
-<form [formGroup]="loginForm" class="d-flex flex-column align-items-center gap-1" (ngSubmit)="onSubmit()">
-    <mat-form-field appearance="fill" class="w-75">
-        <mat-label>Email</mat-label>
-        <input matInput type="email" name="email" formControlName="email" required>
-        @if (loginForm.get('email')?.invalid && loginForm.get('email')?.touched) {
-            <mat-error class="w-75">Enter a valid email address</mat-error>
-        }
-    </mat-form-field>
-    
-    <a class="forgot-password w-75 text-decoration-none d-flex justify-content-end"> Forgot Password</a>
-    <mat-form-field appearance="fill" class="w-75">
-        <mat-label>Password</mat-label>
-        <input matInput type="password" name="password" formControlName="password" required>
-        @if (loginForm.get('password')?.invalid && loginForm.get('password')?.touched) {
-            <mat-error class="w-75">Enter a valid password</mat-error>
-        }
-    </mat-form-field>
-    @if (loginError()) {
-        <mat-error class="w-75">{{ loginError() }}</mat-error>
+<form [formGroup]="loginForm" class="login-form" (ngSubmit)="onSubmit()">
+  <mat-form-field appearance="outline">
+    <mat-label>Email</mat-label>
+    <mat-icon matPrefix aria-hidden="true">mail</mat-icon>
+    <input matInput type="email" name="email" formControlName="email" autocomplete="email" required />
+    @if (loginForm.get('email')?.invalid && loginForm.get('email')?.touched) {
+      <mat-error>Enter a valid email address</mat-error>
     }
-    <button matButton="filled" type="submit" class="w-75">Login</button>
+  </mat-form-field>
+
+  <mat-form-field appearance="outline">
+    <mat-label>Password</mat-label>
+    <mat-icon matPrefix aria-hidden="true">lock</mat-icon>
+    <input matInput type="password" name="password" formControlName="password" autocomplete="current-password" required />
+    @if (loginForm.get('password')?.invalid && loginForm.get('password')?.touched) {
+      <mat-error>Enter a valid password</mat-error>
+    }
+  </mat-form-field>
+
+  <a class="forgot-password" (click)="redirectToForgotPassword()">Forgot password?</a>
+
+  @if (loginError()) {
+    <mat-error>{{ loginError() }}</mat-error>
+  }
+
+  <button mat-flat-button type="submit" class="submit-button">
+    <mat-icon aria-hidden="true">login</mat-icon>
+    Login
+  </button>
 </form>

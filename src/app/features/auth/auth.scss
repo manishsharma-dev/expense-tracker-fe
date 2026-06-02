@@ -1,0 +1,25 @@
+.auth-page {
+  display: grid;
+  place-items: center;
+  min-height: 100vh;
+  padding: 32px 18px;
+  background:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--mat-sys-primary) 12%, transparent), transparent 34%),
+    var(--mat-sys-surface);
+  color: var(--mat-sys-on-surface);
+}
+
+.auth-shell {
+  width: min(100%, 460px);
+}
+
+@media (max-width: 560px) {
+  .auth-page {
+    align-items: stretch;
+    padding: 18px 14px;
+  }
+
+  .auth-shell {
+    width: 100%;
+  }
+}

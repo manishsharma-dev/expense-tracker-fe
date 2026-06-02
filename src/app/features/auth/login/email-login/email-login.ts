@@ -1,9 +1,9 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { MatCardModule } from '@angular/material/card';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatInputModule } from '@angular/material/input';
 import { MatButtonModule } from '@angular/material/button';
+import { MatIconModule } from '@angular/material/icon';
 import { AuthService } from 'app/core/services/apis/auth.service';
 import { AuthService as AuthHelper } from 'app/core/services/auth';
 import { Router } from '@angular/router';
@@ -11,7 +11,13 @@ import { take } from 'rxjs';
 
 @Component({
   selector: 'app-email-login',
-  imports: [ReactiveFormsModule, MatCardModule, MatFormFieldModule, MatInputModule, MatButtonModule],
+  imports: [
+    ReactiveFormsModule,
+    MatButtonModule,
+    MatFormFieldModule,
+    MatIconModule,
+    MatInputModule,
+  ],
   templateUrl: './email-login.html',
   styleUrl: './email-login.scss',
 })
@@ -49,16 +55,7 @@ export class EmailLoginComponent {
     });
   }
 
-  protected forgotPassword(){
-
+  protected redirectToForgotPassword(){
+    this.router.navigate(['/auth/forgot-password']);
   }
-
-  protected register(){
-
-  }
-
-  protected loginwithMobile(){
-
-  }
-
 }
