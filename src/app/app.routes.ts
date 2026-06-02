@@ -68,6 +68,11 @@ export const routes: Routes = [
           .then(m => m.Register),
       },
       {
+        path: 'forgot-password',
+        loadComponent: () => import('./features/auth/forgot-password/forgot-password')
+          .then(c => c.ForgotPasswordComponent)
+      },
+      {
         path: '',
         redirectTo: 'login',
         pathMatch: 'full'

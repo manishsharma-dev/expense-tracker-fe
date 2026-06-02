@@ -3,25 +3,25 @@
         <mat-card-title>Login</mat-card-title>
     </mat-card-header>
     <mat-card-content class="w-100">
-        <form [formGroup]="loginForm" class="d-flex flex-column align-items-center gap-1" (ngSubmit)="onSubmit()">
-        <mat-form-field appearance="fill" class="w-75">
-            <mat-label>Email</mat-label>
-            <input matInput type="email" name="email" formControlName="email" required>
-            @if (loginForm.get('email')?.invalid && loginForm.get('email')?.touched) {
-                <mat-error class="w-75">Enter a valid email address</mat-error>
+        @switch(currentLoginMethod()){
+            @case(LoginMethod.EMAIL){
+                <app-email-login />
             }
-        </mat-form-field>
-        <mat-form-field appearance="fill" class="w-75">
-            <mat-label>Password</mat-label>
-            <input matInput type="password" name="password" formControlName="password" required>
-            @if (loginForm.get('password')?.invalid && loginForm.get('password')?.touched) {
-                <mat-error class="w-75">Enter a valid password</mat-error>
+            @default{
+                <app-mobile-login />
             }
-        </mat-form-field>
-        @if (loginError()) {
-            <mat-error class="w-75">{{ loginError() }}</mat-error>
         }
-        <button matButton="elevated" color="primary" type="submit" class="w-75">Login</button>
-        </form>
     </mat-card-content>
+    <mat-card-footer>
+        <a>
+            @switch(currentLoginMethod()){
+                @case(LoginMethod.EMAIL){
+                   <a ngSkipHydration (click)="setLogin(LoginMethod.MOBILE)">Login with mobilett</a> 
+                }
+                @default{
+                    <a ngSkipHydration (click)="setLogin(LoginMethod.EMAIL)">Login with emailtt</a> 
+                }
+            }
+        </a>
+    </mat-card-footer>
 </mat-card>

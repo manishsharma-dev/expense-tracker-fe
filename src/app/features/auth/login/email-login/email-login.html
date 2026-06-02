@@ -1,0 +1,22 @@
+<form [formGroup]="loginForm" class="d-flex flex-column align-items-center gap-1" (ngSubmit)="onSubmit()">
+    <mat-form-field appearance="fill" class="w-75">
+        <mat-label>Email</mat-label>
+        <input matInput type="email" name="email" formControlName="email" required>
+        @if (loginForm.get('email')?.invalid && loginForm.get('email')?.touched) {
+            <mat-error class="w-75">Enter a valid email address</mat-error>
+        }
+    </mat-form-field>
+    
+    <a class="forgot-password w-75 text-decoration-none d-flex justify-content-end"> Forgot Password</a>
+    <mat-form-field appearance="fill" class="w-75">
+        <mat-label>Password</mat-label>
+        <input matInput type="password" name="password" formControlName="password" required>
+        @if (loginForm.get('password')?.invalid && loginForm.get('password')?.touched) {
+            <mat-error class="w-75">Enter a valid password</mat-error>
+        }
+    </mat-form-field>
+    @if (loginError()) {
+        <mat-error class="w-75">{{ loginError() }}</mat-error>
+    }
+    <button matButton="filled" type="submit" class="w-75">Login</button>
+</form>

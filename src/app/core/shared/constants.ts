@@ -54,3 +54,8 @@ export const MENU_ITEMS: MenuItem[] = [
     route: '/settings',
   },
 ];
+
+export enum LoginMethod {
+  EMAIL,
+  MOBILE
+} 

@@ -6,12 +6,15 @@
 
   @include mat.theme((
     color: (
-      primary: mat.$cyan-palette,
+      primary: mat.$blue-palette,
       tertiary: mat.$orange-palette,
       theme-type: dark
     ),
     typography: Roboto,
     density: 0
-  ));
-
+  ),
+  // $overrides: (
+  //   "surface": #141414,
+  // ),
+  );
 }
