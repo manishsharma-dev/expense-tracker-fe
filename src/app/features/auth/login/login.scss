@@ -54,99 +54,43 @@
   }
 }
 
-.login-switch {
+.otp-form {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px;
-  padding: 5px;
-  margin-bottom: 20px;
-  border: 1px solid var(--mat-sys-outline-variant);
-  border-radius: 12px;
-  background: var(--mat-sys-surface-container-highest);
-}
+  gap: 14px;
 
-.login-switch__button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-  min-height: 42px;
-  border: 0;
-  border-radius: 9px;
-  background: transparent;
-  color: var(--mat-sys-on-surface-variant);
-  cursor: pointer;
-  font: inherit;
-  font-weight: 800;
-
-  mat-icon {
-    font-size: 19px;
-    width: 19px;
-    height: 19px;
-  }
-
-  &--active {
-    background: var(--mat-sys-surface-container-low);
-    color: var(--mat-sys-on-surface);
-    box-shadow: var(--mat-sys-level1);
+  mat-form-field {
+    width: 100%;
   }
 }
 
-.divider {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin: 22px 0;
+.otp-hint {
+  margin: -4px 0 0;
   color: var(--mat-sys-on-surface-variant);
   font-size: 13px;
-
-  &::before,
-  &::after {
-    content: '';
-    flex: 1;
-    height: 1px;
-    background: var(--mat-sys-outline-variant);
-  }
 }
 
-.social-actions {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 12px;
-}
-
-.social-button {
-  --mdc-outlined-button-container-shape: 10px;
-  --mdc-outlined-button-outline-color: var(--mat-sys-outline);
-  min-height: 42px;
+.submit-button {
+  width: 100%;
+  min-height: 46px;
+  --mdc-filled-button-container-shape: 10px;
+  --mdc-filled-button-container-color: var(--mat-sys-primary);
+  --mdc-filled-button-label-text-color: var(--mat-sys-on-primary);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--mat-sys-primary) 28%, transparent);
   transition:
-    background-color 180ms ease,
-    border-color 180ms ease,
     box-shadow 180ms ease,
+    filter 180ms ease,
     transform 180ms ease;
 
   &:hover {
-    --mdc-outlined-button-outline-color: var(--mat-sys-primary);
-    background: color-mix(in srgb, var(--mat-sys-primary) 8%, transparent);
-    box-shadow: var(--mat-sys-level1);
+    filter: saturate(1.08) brightness(1.04);
+    box-shadow: 0 14px 30px color-mix(in srgb, var(--mat-sys-primary) 34%, transparent);
     transform: translateY(-1px);
   }
-}
 
-.social-mark {
-  display: inline-grid;
-  place-items: center;
-  width: 20px;
-  height: 20px;
-  border-radius: 50%;
-  color: var(--mat-sys-primary);
-  font-weight: 900;
-}
-
-.social-mark--facebook {
-  color: var(--mat-sys-secondary);
-  font-size: 20px;
-  line-height: 1;
+  &:active {
+    transform: translateY(0);
+    box-shadow: 0 8px 18px color-mix(in srgb, var(--mat-sys-primary) 24%, transparent);
+  }
 }
 
 .register-line {

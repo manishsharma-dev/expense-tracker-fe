@@ -16,53 +16,54 @@
         height="105"
       />
       <h1>Welcome back</h1>
-      <p>Sign in to continue tracking your expenses.</p>
+      <p>Login or register with an email or phone OTP.</p>
     </header>
 
-    <div class="login-switch" role="tablist" aria-label="Login method">
-      <button
-        type="button"
-        [class.login-switch__button--active]="currentLoginMethod() === LoginMethod.EMAIL"
-        class="login-switch__button"
-        (click)="setLogin(LoginMethod.EMAIL)"
-      >
-        <mat-icon aria-hidden="true">mail</mat-icon>
-        Email
-      </button>
-      <button
-        type="button"
-        [class.login-switch__button--active]="currentLoginMethod() === LoginMethod.MOBILE"
-        class="login-switch__button"
-        (click)="setLogin(LoginMethod.MOBILE)"
-      >
-        <mat-icon aria-hidden="true">phone_iphone</mat-icon>
-        Phone
-      </button>
-    </div>
+    <form class="otp-form" [formGroup]="loginForm" (ngSubmit)="otpRequested() ? verifyOtp() : requestOtp()">
+      <mat-form-field appearance="outline">
+        <mat-label>Email or phone</mat-label>
+        <mat-icon matPrefix aria-hidden="true">alternate_email</mat-icon>
+        <input
+          matInput
+          formControlName="identifier"
+          autocomplete="username"
+          placeholder="you@example.com or +919999999999"
+          [readonly]="otpRequested()"
+        />
+        @if (otpRequested()) {
+          <button mat-icon-button matSuffix type="button" aria-label="Edit email or phone" (click)="editIdentifier()">
+            <mat-icon aria-hidden="true">edit</mat-icon>
+          </button>
+        }
+        @if (loginForm.controls.identifier.hasError('emailOrPhone') && loginForm.controls.identifier.touched) {
+          <mat-error>Enter a valid email or phone number</mat-error>
+        }
+      </mat-form-field>
 
-    @switch(currentLoginMethod()) {
-      @case(LoginMethod.EMAIL) {
-        <app-email-login />
+      @if (otpRequested()) {
+        <mat-form-field appearance="outline">
+          <mat-label>OTP</mat-label>
+          <mat-icon matPrefix aria-hidden="true">pin</mat-icon>
+          <input matInput formControlName="otp" inputmode="numeric" autocomplete="one-time-code" />
+          @if (loginForm.controls.otp.invalid && loginForm.controls.otp.touched) {
+            <mat-error>Enter the OTP</mat-error>
+          }
+        </mat-form-field>
       }
-      @default {
-        <app-mobile-login />
+
+      @if (otpHint()) {
+        <p class="otp-hint">{{ otpHint() }}</p>
       }
-    }
 
-    <div class="divider">
-      <span>or continue with</span>
-    </div>
+      @if (loginError()) {
+        <mat-error>{{ loginError() }}</mat-error>
+      }
 
-    <div class="social-actions">
-      <button mat-stroked-button type="button" class="social-button">
-        <span class="social-mark">G</span>
-        Google
+      <button mat-flat-button type="submit" class="submit-button">
+        <mat-icon aria-hidden="true">{{ otpRequested() ? 'login' : 'send' }}</mat-icon>
+        {{ otpRequested() ? 'Verify & Continue' : 'Send OTP' }}
       </button>
-      <button mat-stroked-button type="button" class="social-button">
-        <span class="social-mark social-mark--facebook">f</span>
-        Facebook
-      </button>
-    </div>
+    </form>
 
     <p class="register-line">
       New to Xpense?

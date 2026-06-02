@@ -1,6 +1,6 @@
 import { inject, Injectable } from '@angular/core';
 import { ApiService } from '../api';
-import { LoginRequest, LoginResponse } from '../../shared/types/auth.model';
+import { LoginResponse, OtpRequest, OtpRequestResponse, OtpVerifyRequest } from '../../shared/types/auth.model';
 import { CommonResponse } from '../../shared/types/common.model';
 
 @Injectable({
@@ -9,7 +9,11 @@ import { CommonResponse } from '../../shared/types/common.model';
 export class AuthService {
   private readonly _api = inject(ApiService);
 
-  login(loginRequest: LoginRequest) {
-    return this._api.post<CommonResponse<LoginResponse>>('auth/login', loginRequest);
+  requestOtp(request: OtpRequest) {
+    return this._api.post<CommonResponse<OtpRequestResponse>>('auth/otp/request', request);
+  }
+
+  verifyOtp(request: OtpVerifyRequest) {
+    return this._api.post<CommonResponse<LoginResponse>>('auth/otp/verify', request);
   }
 }

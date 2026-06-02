@@ -16,8 +16,6 @@
     }
   </mat-form-field>
 
-  <a class="forgot-password" routerLink="/auth/forgot-password">Forgot password?</a>
-
   @if (loginError()) {
     <mat-error>{{ loginError() }}</mat-error>
   }
