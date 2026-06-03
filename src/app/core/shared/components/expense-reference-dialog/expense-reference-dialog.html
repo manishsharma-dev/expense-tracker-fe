@@ -1,0 +1,61 @@
+<h2 mat-dialog-title>{{ data.title }}</h2>
+
+<mat-dialog-content>
+  @if (data.description) {
+    <p class="dialog-description">{{ data.description }}</p>
+  }
+
+  <form class="reference-form" [formGroup]="form">
+    <mat-form-field appearance="outline" class="full-field">
+      <mat-label>{{ data.nameLabel }}</mat-label>
+      <mat-icon matPrefix aria-hidden="true">{{ form.controls.icon.value }}</mat-icon>
+      <input matInput formControlName="name" autocomplete="off" />
+      @if (form.controls.name.hasError('required')) {
+        <mat-error>Name is required</mat-error>
+      } @else if (form.controls.name.hasError('duplicateName')) {
+        <mat-error>This name already exists</mat-error>
+      }
+    </mat-form-field>
+
+    <section class="picker-section">
+      <h3>Color</h3>
+      <div class="color-grid" aria-label="Choose color">
+        @for (color of colors; track color.value) {
+          <button
+            class="color-option color-option--{{ color.value }}"
+            [class.color-option--selected]="form.controls.color.value === color.value"
+            type="button"
+            [attr.aria-label]="color.label"
+            (click)="selectColor(color.value)"
+          >
+            <span></span>
+          </button>
+        }
+      </div>
+    </section>
+
+    <section class="picker-section">
+      <h3>Icon</h3>
+      <div class="icon-grid" aria-label="Choose icon">
+        @for (icon of icons; track icon) {
+          <button
+            class="icon-option"
+            [class.icon-option--selected]="form.controls.icon.value === icon"
+            type="button"
+            [attr.aria-label]="icon"
+            (click)="selectIcon(icon)"
+          >
+            <mat-icon aria-hidden="true">{{ icon }}</mat-icon>
+          </button>
+        }
+      </div>
+    </section>
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="cancel()">Cancel</button>
+  <button mat-flat-button type="button" color="primary" (click)="submit()">
+    {{ data.submitText }}
+  </button>
+</mat-dialog-actions>

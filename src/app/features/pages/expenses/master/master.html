@@ -14,51 +14,39 @@
     <mat-card-content>
       <mat-form-field appearance="outline" class="search-field">
         <mat-icon matPrefix aria-hidden="true">search</mat-icon>
-        <input matInput type="search" placeholder="Search expenses..." />
+        <input matInput type="search" placeholder="Search expenses..." [formControl]="searchControl" />
       </mat-form-field>
 
       <mat-form-field appearance="outline">
         <mat-label>Category</mat-label>
-        <mat-select value="all">
-          <mat-option value="all">Category</mat-option>
-          <mat-option value="food">Food & Dining</mat-option>
-          <mat-option value="transport">Transport</mat-option>
-          <mat-option value="entertainment">Entertainment</mat-option>
+        <mat-select [formControl]="categoryControl">
+          <mat-option value="">All categories</mat-option>
+          @for (category of categories(); track category._id) {
+            <mat-option [value]="category._id">{{ category.name }}</mat-option>
+          }
         </mat-select>
       </mat-form-field>
 
       <mat-form-field appearance="outline">
-        <mat-label>Period</mat-label>
-        <mat-select value="month">
-          <mat-option value="month">This Month</mat-option>
-          <mat-option value="week">This Week</mat-option>
-          <mat-option value="year">This Year</mat-option>
+        <mat-label>Payment</mat-label>
+        <mat-select [formControl]="paymentMethodControl">
+          <mat-option value="">All methods</mat-option>
+          @for (method of paymentMethods(); track method._id) {
+            <mat-option [value]="method._id">{{ method.name }}</mat-option>
+          }
         </mat-select>
       </mat-form-field>
 
-      <mat-form-field appearance="outline">
-        <mat-label>Status</mat-label>
-        <mat-select value="all">
-          <mat-option value="all">Status</mat-option>
-          <mat-option value="completed">Completed</mat-option>
-          <mat-option value="pending">Pending</mat-option>
-        </mat-select>
-      </mat-form-field>
-
-      <mat-form-field appearance="outline">
-        <mat-label>Sort</mat-label>
-        <mat-select value="newest">
-          <mat-option value="newest">Newest First</mat-option>
-          <mat-option value="oldest">Oldest First</mat-option>
-          <mat-option value="highest">Highest Amount</mat-option>
-        </mat-select>
-      </mat-form-field>
+      <button mat-stroked-button class="reset-button" type="button" (click)="resetFilters()">
+        <mat-icon aria-hidden="true">filter_alt_off</mat-icon>
+        Reset
+      </button>
     </mat-card-content>
   </mat-card>
 
   <mat-card class="expenses-table-card" appearance="outlined">
     <mat-card-content>
-      <table mat-table [dataSource]="expenses" class="expenses-table">
+      <table mat-table [dataSource]="expenses()" matSort matSortActive="date" matSortDirection="desc" class="expenses-table">
         <ng-container matColumnDef="select">
           <th mat-header-cell *matHeaderCellDef>
             <mat-checkbox aria-label="Select all expenses"></mat-checkbox>
@@ -69,20 +57,20 @@
         </ng-container>
 
         <ng-container matColumnDef="date">
-          <th mat-header-cell *matHeaderCellDef>Date</th>
-          <td mat-cell *matCellDef="let expense">{{ expense.date }}</td>
+          <th mat-header-cell *matHeaderCellDef mat-sort-header="date">Date</th>
+          <td mat-cell *matCellDef="let expense">{{ formatDate(expense.date) }}</td>
         </ng-container>
 
         <ng-container matColumnDef="description">
-          <th mat-header-cell *matHeaderCellDef>Description</th>
+          <th mat-header-cell *matHeaderCellDef mat-sort-header="description">Description</th>
           <td mat-cell *matCellDef="let expense">
             <span class="expense-title">
-              <span class="expense-icon expense-icon--{{ expense.color }}">
-                <mat-icon aria-hidden="true">{{ expense.icon }}</mat-icon>
+              <span class="expense-icon expense-icon--{{ iconColor(expense) }}">
+                <mat-icon aria-hidden="true">{{ expense.category.icon || 'receipt_long' }}</mat-icon>
               </span>
               <span>
                 <strong>{{ expense.description }}</strong>
-                <small>{{ expense.vendor }}</small>
+                <small>{{ expense.notes || expense.receipt?.originalName || 'No notes' }}</small>
               </span>
             </span>
           </td>
@@ -91,35 +79,26 @@
         <ng-container matColumnDef="category">
           <th mat-header-cell *matHeaderCellDef>Category</th>
           <td mat-cell *matCellDef="let expense">
-            <span class="pill pill--category">{{ expense.category }}</span>
+            <span class="pill pill--category">{{ categoryName(expense) }}</span>
           </td>
         </ng-container>
 
         <ng-container matColumnDef="paymentMethod">
           <th mat-header-cell *matHeaderCellDef>Payment Method</th>
-          <td mat-cell *matCellDef="let expense">{{ expense.paymentMethod }}</td>
+          <td mat-cell *matCellDef="let expense">{{ expense.paymentMethod.name }}</td>
         </ng-container>
 
         <ng-container matColumnDef="amount">
-          <th mat-header-cell *matHeaderCellDef>Amount</th>
+          <th mat-header-cell *matHeaderCellDef mat-sort-header="amount">Amount</th>
           <td mat-cell *matCellDef="let expense">
-            <strong class="amount">{{ expense.amount }}</strong>
-          </td>
-        </ng-container>
-
-        <ng-container matColumnDef="status">
-          <th mat-header-cell *matHeaderCellDef>Status</th>
-          <td mat-cell *matCellDef="let expense">
-            <span class="pill pill--status" [class.pill--pending]="expense.status === 'Pending'">
-              {{ expense.status }}
-            </span>
+            <strong class="amount">{{ formatAmount(expense.amount, expense) }}</strong>
           </td>
         </ng-container>
 
         <ng-container matColumnDef="actions">
           <th mat-header-cell *matHeaderCellDef>Actions</th>
           <td mat-cell *matCellDef="let expense">
-            <a mat-icon-button [routerLink]="['/expenses', expense.id]" [attr.aria-label]="'Edit ' + expense.description">
+            <a mat-icon-button [routerLink]="['/expenses', expense._id]" [attr.aria-label]="'Edit ' + expense.description">
               <mat-icon aria-hidden="true">edit</mat-icon>
             </a>
             <button mat-icon-button type="button" [attr.aria-label]="'Delete ' + expense.description">
@@ -130,51 +109,46 @@
 
         <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
         <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+        <tr class="mat-row empty-row" *matNoDataRow>
+          <td class="mat-cell" [attr.colspan]="displayedColumns.length">
+            {{ loading() ? 'Loading expenses...' : 'No expenses found' }}
+          </td>
+        </tr>
       </table>
 
       <div class="table-footer">
-        <span>Showing 1-8 out of 47 expenses</span>
-        <div class="pagination">
-          <button mat-stroked-button type="button">
-            <mat-icon aria-hidden="true">chevron_left</mat-icon>
-            Previous
-          </button>
-          <button mat-flat-button type="button">1</button>
-          <button mat-stroked-button type="button">2</button>
-          <button mat-stroked-button type="button">3</button>
-          <button mat-stroked-button type="button">5</button>
-          <button mat-stroked-button type="button">
-            Next
-            <mat-icon aria-hidden="true">chevron_right</mat-icon>
-          </button>
-        </div>
+        <span>{{ pageSummary() }}</span>
+        <mat-paginator
+          [length]="totalExpenses()"
+          [pageSize]="10"
+          [pageSizeOptions]="[5, 10, 25, 50]"
+          showFirstLastButtons
+          aria-label="Expense pagination"
+        />
       </div>
     </mat-card-content>
   </mat-card>
 
   <section class="mobile-expenses" aria-label="Expense list">
-    @for (expense of expenses; track expense.description) {
+    @for (expense of expenses(); track expense._id) {
       <mat-card class="expense-card" appearance="outlined">
         <mat-card-content>
-          <span class="expense-icon expense-icon--{{ expense.color }}">
-            <mat-icon aria-hidden="true">{{ expense.icon }}</mat-icon>
+          <span class="expense-icon expense-icon--{{ iconColor(expense) }}">
+            <mat-icon aria-hidden="true">{{ expense.category.icon || 'receipt_long' }}</mat-icon>
           </span>
           <div class="expense-card__body">
             <div class="expense-card__top">
               <strong>{{ expense.description }}</strong>
-              <strong class="amount">{{ expense.amount }}</strong>
+              <strong class="amount">{{ formatAmount(expense.amount, expense) }}</strong>
             </div>
-            <small>{{ expense.vendor }}</small>
+            <small>{{ expense.notes || expense.paymentMethod.name }}</small>
             <div class="expense-card__meta">
-              <span>{{ expense.date }}</span>
-              <span class="pill pill--category">{{ expense.category }}</span>
-              <span class="pill pill--status" [class.pill--pending]="expense.status === 'Pending'">
-                {{ expense.status }}
-              </span>
+              <span>{{ formatDate(expense.date) }}</span>
+              <span class="pill pill--category">{{ categoryName(expense) }}</span>
             </div>
           </div>
           <div class="expense-card__actions">
-            <a mat-icon-button [routerLink]="['/expenses', expense.id]" [attr.aria-label]="'Edit ' + expense.description">
+            <a mat-icon-button [routerLink]="['/expenses', expense._id]" [attr.aria-label]="'Edit ' + expense.description">
               <mat-icon aria-hidden="true">edit</mat-icon>
             </a>
             <button mat-icon-button type="button" [attr.aria-label]="'Delete ' + expense.description">
@@ -183,16 +157,22 @@
           </div>
         </mat-card-content>
       </mat-card>
+    } @empty {
+      <mat-card class="expense-card" appearance="outlined">
+        <mat-card-content>
+          <span>{{ loading() ? 'Loading expenses...' : 'No expenses found' }}</span>
+        </mat-card-content>
+      </mat-card>
     }
 
     <div class="mobile-footer">
-      <span>Showing 1-8 out of 47 expenses</span>
+      <span>{{ pageSummary() }}</span>
       <div class="pagination">
-        <button mat-stroked-button type="button">
+        <button mat-stroked-button type="button" (click)="onMobilePage('previous')" [disabled]="!paginator || paginator.pageIndex === 0">
           <mat-icon aria-hidden="true">chevron_left</mat-icon>
           Previous
         </button>
-        <button mat-stroked-button type="button">
+        <button mat-stroked-button type="button" (click)="onMobilePage('next')" [disabled]="!paginator || paginator.pageIndex + 1 >= totalPages()">
           Next
           <mat-icon aria-hidden="true">chevron_right</mat-icon>
         </button>

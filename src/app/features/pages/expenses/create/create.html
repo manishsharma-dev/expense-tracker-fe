@@ -11,35 +11,61 @@
 
   <mat-card class="form-card" appearance="outlined">
     <mat-card-content>
-      <form class="expense-form">
+      <form class="expense-form" [formGroup]="form" (ngSubmit)="saveExpense()">
         <section class="form-section">
           <h2>Expense Details</h2>
 
           <mat-form-field appearance="outline" class="full-field compact-field">
             <mat-label>Description</mat-label>
             <mat-icon matPrefix aria-hidden="true">description</mat-icon>
-            <input matInput placeholder="e.g. Grocery shopping at Whole Foods" />
+            <input matInput formControlName="description" placeholder="e.g. Grocery shopping at Whole Foods" />
           </mat-form-field>
 
           <div class="two-column">
             <mat-form-field appearance="outline" class="compact-field">
               <mat-label>Amount</mat-label>
-              <input matInput type="number" placeholder="$ 0.00" />
+              <input matInput formControlName="amount" type="number" placeholder="0.00" />
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="compact-field">
               <mat-label>Currency</mat-label>
-              <mat-select value="usd">
-                <mat-option value="usd">USD — US Dollar</mat-option>
-                <mat-option value="inr">INR — Indian Rupee</mat-option>
-                <mat-option value="eur">EUR — Euro</mat-option>
-              </mat-select>
+              <mat-icon matPrefix aria-hidden="true">search</mat-icon>
+              <input
+                matInput
+                [formControl]="countrySearch"
+                [matAutocomplete]="countryAuto"
+                placeholder="Search country or currency"
+                autocomplete="off"
+              />
+              <mat-autocomplete
+                #countryAuto="matAutocomplete"
+                class="country-autocomplete-panel"
+                (optionSelected)="selectCountry($event)"
+              >
+                <cdk-virtual-scroll-viewport itemSize="52" class="country-viewport">
+                  <mat-option *cdkVirtualFor="let country of filteredCountries()" [value]="country">
+                    <span
+                      class="country-option"
+                      [title]="(country.currency?.symbol || '') + ' - ' + (country.currency?.code || country.iso3) + ' (' + (country.currency?.name || country.name) + ')'"
+                    >
+                      <span class="country-option__symbol">{{ country.currency?.symbol || country.emoji }}</span>
+                      <span class="country-option__details">
+                        <strong>{{ country.currency?.code || country.iso3 }}</strong>
+                        <span>{{ country.currency?.name || country.name }}</span>
+                      </span>
+                    </span>
+                  </mat-option>
+                </cdk-virtual-scroll-viewport>
+              </mat-autocomplete>
+              @if (form.controls.country.hasError('required') && countrySearch.touched) {
+                <mat-error>Currency is required</mat-error>
+              }
             </mat-form-field>
           </div>
 
           <mat-form-field appearance="outline" class="compact-field date-field">
             <mat-label>Date</mat-label>
-            <input matInput [matDatepicker]="picker" placeholder="Oct 15, 2025" />
+            <input matInput formControlName="date" [matDatepicker]="picker" placeholder="Oct 15, 2025" />
             <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
             <mat-datepicker #picker></mat-datepicker>
           </mat-form-field>
@@ -49,41 +75,62 @@
           <h2>Category & Payment</h2>
           <div class="category-payment-grid">
             <div>
-              <h3>Category</h3>
+              <div class="section-title-row">
+                <h3>Category</h3>
+                <button mat-button type="button" (click)="addCategory()">Add</button>
+              </div>
               <div class="category-grid" role="radiogroup" aria-label="Expense category">
-                @for (category of categories; track category.value) {
+                @for (category of categories(); track category._id) {
                   <button
-                    class="category-tile category-tile--{{ category.color }}"
-                    [class.category-tile--selected]="category.value === 'food'"
+                    class="category-tile category-tile--{{ category.color || 'neutral' }}"
+                    [class.category-tile--selected]="form.controls.category.value === category._id"
                     type="button"
+                    (click)="selectCategory(category._id)"
                   >
-                    <mat-icon aria-hidden="true">{{ category.icon }}</mat-icon>
-                    <span>{{ category.label }}</span>
+                    <mat-icon aria-hidden="true">{{ category.icon || 'category' }}</mat-icon>
+                    <span>{{ category.name }}</span>
                   </button>
                 }
               </div>
+
+              <mat-form-field appearance="outline" class="full-field compact-field subcategory-field">
+                <mat-label>Sub category</mat-label>
+                <mat-select formControlName="subCategory">
+                  <mat-option value="">None</mat-option>
+                  @for (subCategory of filteredSubCategories(); track subCategory._id) {
+                    <mat-option [value]="subCategory._id">{{ subCategory.name }}</mat-option>
+                  }
+                </mat-select>
+              </mat-form-field>
+              <button class="add-card-button" type="button" (click)="addSubCategory()">+ Add sub category</button>
             </div>
 
             <div>
-              <h3>Payment Method</h3>
-              <mat-radio-group class="payment-list" value="visa" aria-label="Payment method">
-                @for (method of paymentMethods; track method.value) {
-                  <mat-radio-button [value]="method.value">
+              <div class="section-title-row">
+                <h3>Payment Method</h3>
+                <button mat-button type="button" (click)="addPaymentMethod()">Add</button>
+              </div>
+              <mat-radio-group class="payment-list" formControlName="paymentMethod" aria-label="Payment method">
+                @for (method of paymentMethods(); track method._id) {
+                  <mat-radio-button [value]="method._id">
                     <span class="payment-option">
-                      <mat-icon aria-hidden="true">{{ method.icon }}</mat-icon>
-                      {{ method.label }}
+                      <mat-icon aria-hidden="true">{{ method.icon || 'payments' }}</mat-icon>
+                      {{ method.name }}
                     </span>
                   </mat-radio-button>
                 }
               </mat-radio-group>
-              <button class="add-card-button" type="button">+ Add new card</button>
+              <button class="add-card-button" type="button" (click)="addPaymentMethod()">+ Add payment method</button>
             </div>
           </div>
         </section>
 
         <section class="form-section">
           <h2>Notes (optional)</h2>
-          <mat-checkbox>Add any additional notes or tags...</mat-checkbox>
+          <mat-form-field appearance="outline" class="full-field compact-field">
+            <mat-label>Notes or tags</mat-label>
+            <textarea matInput formControlName="notes" rows="3"></textarea>
+          </mat-form-field>
         </section>
 
         <section class="form-section">
@@ -91,13 +138,18 @@
           <label class="receipt-dropzone" for="receipt-upload">
             <mat-icon aria-hidden="true">upload</mat-icon>
             <strong>Upload a receipt or screenshot</strong>
-            <span>Drag & drop here or browse files</span>
+            @if (selectedReceipt()) {
+              <span>{{ selectedReceipt()?.name }}</span>
+            } @else {
+              <span>Drag & drop here or browse files</span>
+            }
             <small>Supports JPG, PNG, WebP, PDF up to 10MB</small>
             <input
               id="receipt-upload"
               class="receipt-input"
               type="file"
               accept="image/*,.pdf"
+              (change)="onReceiptSelected($event)"
             />
           </label>
         </section>
@@ -105,7 +157,7 @@
         <div class="form-actions">
           <a mat-button routerLink="/expenses">Cancel</a>
           <button mat-button type="button">Save as Draft</button>
-          <button mat-flat-button type="button">
+          <button mat-flat-button type="submit" [disabled]="saving()">
             <mat-icon aria-hidden="true">add_circle</mat-icon>
             Add Expense
           </button>
