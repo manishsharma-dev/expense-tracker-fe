@@ -1,15 +1,16 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, inject, signal } from '@angular/core';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatIconModule } from '@angular/material/icon';
 import { MatMenuModule } from '@angular/material/menu';
 import { MatTooltipModule } from '@angular/material/tooltip';
 import { Router, RouterLink, RouterLinkActive } from '@angular/router';
-import { take } from 'rxjs';
+import { finalize, take } from 'rxjs';
 import { AuthService as AuthApiService } from '../../../services/apis/auth.service';
 import { AuthService as AuthStateService } from '../../../services/auth';
 import { ThemeService } from '../../../services/theme';
 import { ConfirmDialog } from '../confirm-dialog/confirm-dialog';
+import { Loader } from '../loader/loader';
 
 @Component({
   selector: 'app-header',
@@ -21,6 +22,7 @@ import { ConfirmDialog } from '../confirm-dialog/confirm-dialog';
     MatIconModule,
     MatMenuModule,
     MatTooltipModule,
+    Loader,
   ],
   templateUrl: './header.html',
   styleUrl: './header.scss',
@@ -31,6 +33,7 @@ export class Header {
   private readonly authStateService = inject(AuthStateService);
   private readonly dialog = inject(MatDialog);
   private readonly router = inject(Router);
+  protected readonly loggingOut = signal(false);
 
   protected readonly navItems = [
     { label: 'Dashboard', route: '/', icon: 'dashboard' },
@@ -64,7 +67,11 @@ export class Header {
   }
 
   private initiateLogout(): void {
-    this.authApiService.logout().pipe(take(1)).subscribe({
+    this.loggingOut.set(true);
+    this.authApiService.logout().pipe(
+      take(1),
+      finalize(() => this.loggingOut.set(false))
+    ).subscribe({
       next: () => this.completeLogout(),
       error: () => this.completeLogout(),
     });

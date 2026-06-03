@@ -31,6 +31,7 @@
 .filters-card,
 .expenses-table-card,
 .expense-card {
+  position: relative;
   --mdc-outlined-card-container-color: var(--mat-sys-surface-container-low, var(--mat-sys-surface));
   --mdc-outlined-card-outline-color: var(--mat-sys-outline-variant);
   border-radius: 12px;
@@ -38,6 +39,7 @@
 }
 
 .filters-card {
+  overflow: hidden;
   margin-bottom: 18px;
 
   mat-card-content {

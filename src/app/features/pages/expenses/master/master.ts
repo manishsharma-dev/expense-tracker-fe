@@ -12,8 +12,9 @@ import { MatSelectModule } from '@angular/material/select';
 import { MatSort, MatSortModule } from '@angular/material/sort';
 import { MatTableModule } from '@angular/material/table';
 import { RouterLink } from '@angular/router';
-import { debounceTime, distinctUntilChanged, EMPTY, forkJoin, merge, startWith, take } from 'rxjs';
+import { debounceTime, distinctUntilChanged, EMPTY, finalize, forkJoin, merge, startWith, take } from 'rxjs';
 import { ExpenseApiService } from 'app/core/services/apis/expense.service';
+import { Loader } from 'app/core/shared/components/loader/loader';
 import { Category, Expense, PaymentMethod } from 'app/core/shared/types/expense.model';
 
 @Component({
@@ -32,6 +33,7 @@ import { Category, Expense, PaymentMethod } from 'app/core/shared/types/expense.
     MatSelectModule,
     MatSortModule,
     MatTableModule,
+    Loader,
   ],
   providers: [DatePipe],
   templateUrl: './master.html',
@@ -57,6 +59,7 @@ export class Master implements OnInit, AfterViewInit {
   protected readonly expenses = signal<Expense[]>([]);
   protected readonly totalExpenses = signal(0);
   protected readonly loading = signal(false);
+  protected readonly referencesLoading = signal(false);
   protected readonly categories = signal<Category[]>([]);
   protected readonly paymentMethods = signal<PaymentMethod[]>([]);
 
@@ -145,10 +148,14 @@ export class Master implements OnInit, AfterViewInit {
   }
 
   private loadReferences(): void {
+    this.referencesLoading.set(true);
     forkJoin({
       categories: this.expenseApi.getCategories(),
       paymentMethods: this.expenseApi.getPaymentMethods(),
-    }).pipe(take(1)).subscribe(({ categories, paymentMethods }) => {
+    }).pipe(
+      take(1),
+      finalize(() => this.referencesLoading.set(false))
+    ).subscribe(({ categories, paymentMethods }) => {
       this.categories.set(categories.data.categories ?? []);
       this.paymentMethods.set(paymentMethods.data.paymentMethods ?? []);
     });
@@ -168,16 +175,17 @@ export class Master implements OnInit, AfterViewInit {
       sortOrder: sort.sortOrder,
       category: this.categoryControl.value,
       paymentMethod: this.paymentMethodControl.value,
-    }).pipe(take(1)).subscribe({
+    }).pipe(
+      take(1),
+      finalize(() => this.loading.set(false))
+    ).subscribe({
       next: (response) => {
         this.expenses.set(response.data.expenses);
         this.totalExpenses.set(response.data.pagination.total);
-        this.loading.set(false);
       },
       error: () => {
         this.expenses.set([]);
         this.totalExpenses.set(0);
-        this.loading.set(false);
       },
     });
   }

@@ -10,6 +10,9 @@
   </header>
 
   <mat-card class="form-card" appearance="outlined">
+    @if (loadingReferences() || referenceActionLoading() || saving()) {
+      <app-loader [overlay]="true" [text]="loadingText()" />
+    }
     <mat-card-content>
       <form class="expense-form" [formGroup]="form" (ngSubmit)="saveExpense()">
         <section class="form-section">
@@ -157,7 +160,7 @@
         <div class="form-actions">
           <a mat-button routerLink="/expenses">Cancel</a>
           <button mat-button type="button">Save as Draft</button>
-          <button mat-flat-button type="submit" [disabled]="saving()">
+          <button mat-flat-button type="submit" [disabled]="loadingReferences() || referenceActionLoading() || saving()">
             <mat-icon aria-hidden="true">add_circle</mat-icon>
             Add Expense
           </button>

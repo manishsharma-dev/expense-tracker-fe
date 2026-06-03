@@ -1,4 +1,7 @@
 <mat-card class="login-card" appearance="outlined">
+  @if (loading()) {
+    <app-loader [overlay]="true" [text]="loadingText()" />
+  }
   <mat-card-content>
     <header class="login-header">
       <img
@@ -58,7 +61,7 @@
         <mat-error>{{ loginError() }}</mat-error>
       }
 
-      <button mat-flat-button type="submit" class="submit-button">
+      <button mat-flat-button type="submit" class="submit-button" [disabled]="loading()">
         <mat-icon aria-hidden="true">{{ otpRequested() ? 'login' : 'send' }}</mat-icon>
         {{ otpRequested() ? 'Verify & Continue' : 'Send OTP' }}
       </button>

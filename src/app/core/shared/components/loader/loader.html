@@ -1,3 +1,4 @@
-<div class="loader">
-    <mat-progress-spinner mode="indeterminate"></mat-progress-spinner>
+<div class="loader" [class.loader--overlay]="overlay" role="status" aria-live="polite">
+  <mat-progress-spinner mode="indeterminate" [diameter]="diameter"></mat-progress-spinner>
+  <span>{{ text }}</span>
 </div>

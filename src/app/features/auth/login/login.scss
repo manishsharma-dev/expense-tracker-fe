@@ -1,6 +1,8 @@
 @use '@angular/material' as mat;
 
 .login-card {
+  position: relative;
+  overflow: hidden;
   --mdc-outlined-card-container-color: var(--mat-sys-surface-container-low, var(--mat-sys-surface));
   --mdc-outlined-card-outline-color: var(--mat-sys-outline-variant);
   width: min(100%, 460px);

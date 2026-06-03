@@ -1,3 +1,23 @@
 :host {
   display: block;
 }
+
+.loader {
+  display: grid;
+  place-items: center;
+  gap: 12px;
+  min-height: 120px;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 14px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.loader--overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  min-height: 0;
+  background: color-mix(in srgb, var(--mat-sys-surface) 78%, transparent);
+  backdrop-filter: blur(2px);
+}

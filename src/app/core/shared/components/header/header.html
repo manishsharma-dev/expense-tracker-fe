@@ -1,4 +1,7 @@
 <header class="topbar">
+  @if (loggingOut()) {
+    <app-loader [overlay]="true" text="Logging out..." [diameter]="28" />
+  }
   <a class="brand" routerLink="/" aria-label="Xpense home">
     <img
       class="brand__logo brand__logo--light"

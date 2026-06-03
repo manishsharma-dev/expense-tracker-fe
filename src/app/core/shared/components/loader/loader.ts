@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component } from '@angular/core';
+import { ChangeDetectionStrategy, Component, Input } from '@angular/core';
 import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
 
 @Component({
@@ -8,4 +8,8 @@ import { MatProgressSpinnerModule } from '@angular/material/progress-spinner';
   styleUrl: './loader.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class Loader { }
+export class Loader {
+  @Input() text = 'Loading...';
+  @Input() overlay = false;
+  @Input() diameter = 36;
+}

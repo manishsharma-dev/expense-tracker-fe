@@ -11,6 +11,9 @@
   </header>
 
   <mat-card class="filters-card" appearance="outlined">
+    @if (referencesLoading()) {
+      <app-loader [overlay]="true" text="Loading filters..." [diameter]="28" />
+    }
     <mat-card-content>
       <mat-form-field appearance="outline" class="search-field">
         <mat-icon matPrefix aria-hidden="true">search</mat-icon>
@@ -45,6 +48,9 @@
   </mat-card>
 
   <mat-card class="expenses-table-card" appearance="outlined">
+    @if (loading()) {
+      <app-loader [overlay]="true" text="Loading expenses..." />
+    }
     <mat-card-content>
       <table mat-table [dataSource]="expenses()" matSort matSortActive="date" matSortDirection="desc" class="expenses-table">
         <ng-container matColumnDef="select">

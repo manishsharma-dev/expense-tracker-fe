@@ -14,12 +14,13 @@ import { MatRadioModule } from '@angular/material/radio';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { Router, RouterLink } from '@angular/router';
-import { forkJoin, take } from 'rxjs';
+import { finalize, forkJoin, take } from 'rxjs';
 import { ExpenseApiService } from 'app/core/services/apis/expense.service';
 import {
   ExpenseReferenceDialog,
   ExpenseReferenceDialogResult,
 } from 'app/core/shared/components/expense-reference-dialog/expense-reference-dialog';
+import { Loader } from 'app/core/shared/components/loader/loader';
 import { Category, Country, PaymentMethod, SubCategory } from 'app/core/shared/types/expense.model';
 
 type ExpenseForm = {
@@ -51,6 +52,7 @@ type ExpenseForm = {
     MatRadioModule,
     MatSelectModule,
     MatSnackBarModule,
+    Loader,
   ],
   templateUrl: './create.html',
   styleUrl: './create.scss',
@@ -70,6 +72,9 @@ export class Create implements OnInit {
   protected readonly selectedReceipt = signal<File | null>(null);
   protected readonly selectedCategory = signal('');
   protected readonly saving = signal(false);
+  protected readonly loadingReferences = signal(false);
+  protected readonly referenceActionLoading = signal(false);
+  protected readonly loadingText = signal('Loading...');
 
   protected readonly form = new FormGroup<ExpenseForm>({
     description: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(200)] }),
@@ -157,7 +162,12 @@ export class Create implements OnInit {
     }).afterClosed().pipe(take(1)).subscribe((result?: ExpenseReferenceDialogResult) => {
       if (!result) return;
 
-      this.expenseApi.createCategory(result).pipe(take(1)).subscribe({
+      this.loadingText.set('Creating category...');
+      this.referenceActionLoading.set(true);
+      this.expenseApi.createCategory(result).pipe(
+        take(1),
+        finalize(() => this.referenceActionLoading.set(false))
+      ).subscribe({
         next: (response) => this.addCreatedCategory(response.data.category),
         error: () => this.snackBar.open('Could not create category', 'Close', { duration: 2500 }),
       });
@@ -192,7 +202,12 @@ export class Create implements OnInit {
     }).afterClosed().pipe(take(1)).subscribe((result?: ExpenseReferenceDialogResult) => {
       if (!result) return;
 
-      this.expenseApi.createSubCategory({ ...result, category }).pipe(take(1)).subscribe({
+      this.loadingText.set('Creating sub category...');
+      this.referenceActionLoading.set(true);
+      this.expenseApi.createSubCategory({ ...result, category }).pipe(
+        take(1),
+        finalize(() => this.referenceActionLoading.set(false))
+      ).subscribe({
         next: (response) => this.addCreatedSubCategory(response.data.subCategory),
         error: () => this.snackBar.open('Could not create sub category', 'Close', { duration: 2500 }),
       });
@@ -203,8 +218,13 @@ export class Create implements OnInit {
     const name = window.prompt('Payment method name');
     if (!name?.trim()) return;
 
+    this.loadingText.set('Creating payment method...');
+    this.referenceActionLoading.set(true);
     this.expenseApi.createPaymentMethod({ name: name.trim(), type: 'other', icon: 'payments' })
-      .pipe(take(1))
+      .pipe(
+        take(1),
+        finalize(() => this.referenceActionLoading.set(false))
+      )
       .subscribe({
         next: (response) => {
           const paymentMethod = response.data.paymentMethod;
@@ -224,26 +244,34 @@ export class Create implements OnInit {
     }
 
     const payload = this.buildExpensePayload();
+    this.loadingText.set('Saving expense...');
     this.saving.set(true);
-    this.expenseApi.createExpense(payload).pipe(take(1)).subscribe({
+    this.expenseApi.createExpense(payload).pipe(
+      take(1),
+      finalize(() => this.saving.set(false))
+    ).subscribe({
       next: () => {
         this.snackBar.open('Expense added', 'Close', { duration: 2500 });
         this.router.navigate(['/expenses']);
       },
       error: () => {
-        this.saving.set(false);
         this.snackBar.open('Could not add expense', 'Close', { duration: 2500 });
       },
     });
   }
 
   private loadReferences(): void {
+    this.loadingText.set('Loading expense details...');
+    this.loadingReferences.set(true);
     forkJoin({
       categories: this.expenseApi.getCategories(),
       subCategories: this.expenseApi.getSubCategories(),
       paymentMethods: this.expenseApi.getPaymentMethods(),
       countries: this.expenseApi.getCountries(),
-    }).pipe(take(1)).subscribe({
+    }).pipe(
+      take(1),
+      finalize(() => this.loadingReferences.set(false))
+    ).subscribe({
       next: ({ categories, subCategories, paymentMethods, countries }) => {
         this.categories.set(categories.data.categories ?? []);
         this.subCategories.set(subCategories.data.subCategories ?? []);

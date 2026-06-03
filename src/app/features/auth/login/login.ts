@@ -6,9 +6,10 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { Router } from '@angular/router';
-import { take } from 'rxjs';
+import { finalize, take } from 'rxjs';
 import { AuthService } from 'app/core/services/apis/auth.service';
 import { AuthService as AuthHelper } from 'app/core/services/auth';
+import { Loader } from 'app/core/shared/components/loader/loader';
 
 @Component({
   selector: 'app-login',
@@ -19,6 +20,7 @@ import { AuthService as AuthHelper } from 'app/core/services/auth';
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
+    Loader,
   ],
   changeDetection: ChangeDetectionStrategy.OnPush,
   templateUrl: './login.html',
@@ -28,6 +30,8 @@ export class Login {
   protected readonly otpRequested = signal(false);
   protected readonly loginError = signal<string | null>(null);
   protected readonly otpHint = signal<string | null>(null);
+  protected readonly loading = signal(false);
+  protected readonly loadingText = signal('Loading...');
 
   protected readonly loginForm = new FormGroup({
     identifier: new FormControl('', [Validators.required, this.emailOrPhoneValidator]),
@@ -48,7 +52,12 @@ export class Login {
       return;
     }
 
-    this.authService.requestOtp({ identifier: identifierControl.value ?? '' }).pipe(take(1)).subscribe({
+    this.loadingText.set('Sending OTP...');
+    this.loading.set(true);
+    this.authService.requestOtp({ identifier: identifierControl.value ?? '' }).pipe(
+      take(1),
+      finalize(() => this.loading.set(false))
+    ).subscribe({
       next: (response) => {
         this.otpRequested.set(true);
         this.loginForm.controls.otp.setValidators([Validators.required, Validators.pattern(/^\d{4,8}$/)]);
@@ -69,10 +78,15 @@ export class Login {
       return;
     }
 
+    this.loadingText.set('Verifying OTP...');
+    this.loading.set(true);
     this.authService.verifyOtp({
       identifier: this.loginForm.controls.identifier.value ?? '',
       otp: this.loginForm.controls.otp.value ?? '',
-    }).pipe(take(1)).subscribe({
+    }).pipe(
+      take(1),
+      finalize(() => this.loading.set(false))
+    ).subscribe({
       next: (response) => {
         this.authHelper.login(response.data.token);
         this.router.navigate(['/']);
