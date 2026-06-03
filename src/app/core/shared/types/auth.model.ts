@@ -4,6 +4,7 @@ export type OtpRequest = {
 
 export type LoginResponse = {
     token: string;
+    sessionId?: string;
     user?: unknown;
 };
 
@@ -16,4 +17,5 @@ export type OtpRequestResponse = {
 export type OtpVerifyRequest = {
     identifier: string;
     otp: string;
+    deviceId?: string;
 };

@@ -37,7 +37,17 @@
       <mat-icon aria-hidden="true">notifications_none</mat-icon>
       <span class="notification-dot" aria-hidden="true"></span>
     </button>
-    <button class="avatar-btn" type="button" aria-label="User menu">JD</button>
+    <button class="avatar-btn" type="button" aria-label="User menu" [matMenuTriggerFor]="userMenu">JD</button>
+    <mat-menu #userMenu="matMenu" xPosition="before" panelClass="user-menu-panel">
+      <button mat-menu-item type="button" disabled>
+        <mat-icon aria-hidden="true">person</mat-icon>
+        <span>Profile</span>
+      </button>
+      <button mat-menu-item type="button" (click)="logout()">
+        <mat-icon aria-hidden="true">logout</mat-icon>
+        <span>Logout</span>
+      </button>
+    </mat-menu>
   </div>
 </header>
 
