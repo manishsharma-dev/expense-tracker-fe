@@ -1,8 +1,9 @@
 // src/app/app.config.ts
-import { ApplicationConfig, inject, provideAppInitializer } from '@angular/core';
+import { ApplicationConfig, inject, isDevMode, provideAppInitializer } from '@angular/core';
 import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
+import { provideServiceWorker } from '@angular/service-worker';
 import { routes } from './app.routes';
 import { apiInterceptor } from './core/interceptors/api-interceptor';
 import { HttpClient } from '@angular/common/http';
@@ -29,6 +30,10 @@ export const appConfig: ApplicationConfig = {
       withFetch(),
       withInterceptors([apiInterceptor]),
     ),
+    provideServiceWorker('ngsw-worker.js', {
+      enabled: !isDevMode(),
+      registrationStrategy: 'registerWhenStable:30000',
+    }),
     provideAppInitializer(() => loadConfig(inject(HttpClient), inject(Config))),
   ],
 };
