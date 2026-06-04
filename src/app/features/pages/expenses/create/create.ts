@@ -1,4 +1,4 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnInit, signal, ViewChild } from '@angular/core';
 import { ScrollingModule } from '@angular/cdk/scrolling';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -9,7 +9,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatNativeDateModule } from '@angular/material/core';
-import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
+import { MatAutocompleteModule, MatAutocompleteSelectedEvent, MatAutocompleteTrigger } from '@angular/material/autocomplete';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
@@ -58,6 +58,8 @@ type ExpenseForm = {
   styleUrl: './create.scss',
 })
 export class Create implements OnInit {
+  @ViewChild(MatAutocompleteTrigger) private countryAutocompleteTrigger?: MatAutocompleteTrigger;
+
   private readonly expenseApi = inject(ExpenseApiService);
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
@@ -128,6 +130,14 @@ export class Create implements OnInit {
   protected onReceiptSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     this.selectedReceipt.set(input.files?.[0] ?? null);
+  }
+
+  protected openCountryPanel(): void {
+    if (!this.countries().length) return;
+
+    setTimeout(() => {
+      this.countryAutocompleteTrigger?.openPanel();
+    });
   }
 
   protected selectCountry(event: MatAutocompleteSelectedEvent): void {

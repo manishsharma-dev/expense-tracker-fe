@@ -46,7 +46,8 @@
               "allowedHosts": [
                 "localhost",
                 "127.0.0.1",
-                "expense-tracker-fe-o0wf.onrender.com"
+                "expense-tracker-fe-o0wf.onrender.com",
+                "3f8tx9ph-4200.inc1.devtunnels.ms"
               ]
             },
             "ssr": {

@@ -11,7 +11,19 @@ import { REQUEST } from '@angular/core';
 const browserDistFolder = join(import.meta.dirname, '../browser');
 
 const app = express();
-const angularApp = new AngularNodeAppEngine();
+app.set('trust proxy', true);
+
+const trustedProxyHeaders = [
+  'x-forwarded-for',
+  'x-forwarded-host',
+  'x-forwarded-port',
+  'x-forwarded-proto',
+  'x-forwarded-scheme',
+] as const;
+
+const angularApp = new AngularNodeAppEngine({
+  trustProxyHeaders: trustedProxyHeaders,
+});
 
 /**
  * Example Express Rest API endpoints can be defined here.

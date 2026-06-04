@@ -39,7 +39,20 @@
                 [matAutocomplete]="countryAuto"
                 placeholder="Search country or currency"
                 autocomplete="off"
+                (focus)="openCountryPanel()"
+                (click)="openCountryPanel()"
+                (touchstart)="openCountryPanel()"
               />
+              <button
+                mat-icon-button
+                matSuffix
+                type="button"
+                aria-label="Open currency list"
+                (click)="openCountryPanel()"
+                (touchstart)="openCountryPanel()"
+              >
+                <mat-icon aria-hidden="true">arrow_drop_down</mat-icon>
+              </button>
               <mat-autocomplete
                 #countryAuto="matAutocomplete"
                 class="country-autocomplete-panel"
