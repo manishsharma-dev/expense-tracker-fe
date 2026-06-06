@@ -23,6 +23,7 @@ import {
 } from 'app/core/shared/components/expense-reference-dialog/expense-reference-dialog';
 import { Loader } from 'app/core/shared/components/loader/loader';
 import { Category, Country, PaymentMethod, SubCategory } from 'app/core/shared/types/expense.model';
+import { CountryPickerDialog } from './country-picker-dialog';
 
 type ExpenseForm = {
   description: FormControl<string>;
@@ -54,6 +55,7 @@ type ExpenseForm = {
     MatSelectModule,
     MatSnackBarModule,
     Loader,
+    CountryPickerDialog,
   ],
   templateUrl: './create.html',
   styleUrl: './create.scss',
@@ -67,6 +69,7 @@ export class Create implements OnInit {
   private readonly snackBar = inject(MatSnackBar);
   private readonly router = inject(Router);
   private readonly platformId = inject(PLATFORM_ID);
+  private countryDialogOpen = false;
 
   protected readonly categories = signal<Category[]>([]);
   protected readonly subCategories = signal<SubCategory[]>([]);
@@ -140,6 +143,11 @@ export class Create implements OnInit {
   protected openCountryPanel(): void {
     if (!this.countries().length) return;
 
+    if (this.useNativeCountryOptions()) {
+      this.openCountryPickerDialog();
+      return;
+    }
+
     this.countryInput?.nativeElement.focus();
 
     window.setTimeout(() => {
@@ -149,10 +157,37 @@ export class Create implements OnInit {
   }
 
   protected selectCountry(event: MatAutocompleteSelectedEvent): void {
-    const country = event.option.value as Country;
+    this.applySelectedCountry(event.option.value as Country);
+  }
+
+  private applySelectedCountry(country: Country): void {
     this.form.controls.country.setValue(country._id);
     this.countrySearch.setValue(this.getCountryLabel(country), { emitEvent: false });
     this.countrySearchTerm.set(this.getCountryLabel(country));
+  }
+
+  private openCountryPickerDialog(): void {
+    if (this.countryDialogOpen) return;
+
+    this.countryAutocompleteTrigger?.closePanel();
+    this.countryInput?.nativeElement.blur();
+    this.countryDialogOpen = true;
+
+    this.dialog.open(CountryPickerDialog, {
+      width: '100vw',
+      maxWidth: '100vw',
+      position: { bottom: '0' },
+      autoFocus: false,
+      restoreFocus: false,
+      panelClass: 'currency-picker-dialog-panel',
+      data: {
+        countries: this.countries(),
+        selectedCountryId: this.form.controls.country.value,
+      },
+    }).afterClosed().pipe(take(1)).subscribe((country?: Country) => {
+      this.countryDialogOpen = false;
+      if (country) this.applySelectedCountry(country);
+    });
   }
 
   protected getCountryLabel(country: Country): string {

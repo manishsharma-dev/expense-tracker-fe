@@ -170,6 +170,20 @@
   line-height: 1.25;
 }
 
+::ng-deep .currency-picker-dialog-panel {
+  align-self: flex-end;
+
+  .mat-mdc-dialog-container .mdc-dialog__surface {
+    border-radius: 18px 18px 0 0;
+    background: var(--mat-sys-surface);
+  }
+
+  .mat-mdc-dialog-content,
+  .mat-mdc-dialog-surface {
+    max-height: none;
+  }
+}
+
 :host ::ng-deep .compact-field .mat-mdc-form-field-subscript-wrapper {
   display: none;
 }

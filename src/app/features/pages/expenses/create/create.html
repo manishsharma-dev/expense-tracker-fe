@@ -38,6 +38,8 @@
                 matInput
                 [formControl]="countrySearch"
                 [matAutocomplete]="countryAuto"
+                [matAutocompleteDisabled]="useNativeCountryOptions()"
+                [readonly]="useNativeCountryOptions()"
                 placeholder="Search country or currency"
                 autocomplete="off"
                 (focus)="openCountryPanel()"
