@@ -1,4 +1,5 @@
-import { Component, computed, inject, OnInit, signal, ViewChild } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
+import { Component, computed, ElementRef, inject, OnInit, PLATFORM_ID, signal, ViewChild } from '@angular/core';
 import { ScrollingModule } from '@angular/cdk/scrolling';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -59,11 +60,13 @@ type ExpenseForm = {
 })
 export class Create implements OnInit {
   @ViewChild(MatAutocompleteTrigger) private countryAutocompleteTrigger?: MatAutocompleteTrigger;
+  @ViewChild('countryInput') private countryInput?: ElementRef<HTMLInputElement>;
 
   private readonly expenseApi = inject(ExpenseApiService);
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
   private readonly router = inject(Router);
+  private readonly platformId = inject(PLATFORM_ID);
 
   protected readonly categories = signal<Category[]>([]);
   protected readonly subCategories = signal<SubCategory[]>([]);
@@ -77,6 +80,7 @@ export class Create implements OnInit {
   protected readonly loadingReferences = signal(false);
   protected readonly referenceActionLoading = signal(false);
   protected readonly loadingText = signal('Loading...');
+  protected readonly useNativeCountryOptions = signal(false);
 
   protected readonly form = new FormGroup<ExpenseForm>({
     description: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(200)] }),
@@ -108,6 +112,7 @@ export class Create implements OnInit {
   });
 
   ngOnInit(): void {
+    this.useNativeCountryOptions.set(this.isIosBrowser());
     this.loadReferences();
     this.form.controls.category.valueChanges.subscribe(() => {
       this.selectedCategory.set(this.form.controls.category.value);
@@ -135,9 +140,12 @@ export class Create implements OnInit {
   protected openCountryPanel(): void {
     if (!this.countries().length) return;
 
-    setTimeout(() => {
+    this.countryInput?.nativeElement.focus();
+
+    window.setTimeout(() => {
       this.countryAutocompleteTrigger?.openPanel();
-    });
+      this.countryAutocompleteTrigger?.updatePosition();
+    }, 120);
   }
 
   protected selectCountry(event: MatAutocompleteSelectedEvent): void {
@@ -322,5 +330,15 @@ export class Create implements OnInit {
   private getCategoryId(category: string | Category): string {
     if(!category) return '';
     return  typeof category === 'string' ? category : category._id;
+  }
+
+  private isIosBrowser(): boolean {
+    if (!isPlatformBrowser(this.platformId)) return false;
+
+    const userAgent = window.navigator.userAgent;
+    const platform = window.navigator.platform;
+    const hasTouch = window.navigator.maxTouchPoints > 1;
+
+    return /iPad|iPhone|iPod/.test(userAgent) || (platform === 'MacIntel' && hasTouch);
   }
 }
