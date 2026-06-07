@@ -34,64 +34,31 @@
               <mat-label>Currency</mat-label>
               <mat-icon matPrefix aria-hidden="true">search</mat-icon>
               <input
-                #countryInput
                 matInput
                 [formControl]="countrySearch"
                 [matAutocomplete]="countryAuto"
-                [matAutocompleteDisabled]="useNativeCountryOptions()"
-                [readonly]="useNativeCountryOptions()"
                 placeholder="Search country or currency"
                 autocomplete="off"
-                (focus)="openCountryPanel()"
-                (click)="openCountryPanel()"
-                (touchend)="openCountryPanel()"
               />
-              <button
-                mat-icon-button
-                matSuffix
-                type="button"
-                aria-label="Open currency list"
-                (click)="openCountryPanel()"
-                (touchend)="openCountryPanel()"
-              >
-                <mat-icon aria-hidden="true">arrow_drop_down</mat-icon>
-              </button>
               <mat-autocomplete
                 #countryAuto="matAutocomplete"
                 class="country-autocomplete-panel"
                 (optionSelected)="selectCountry($event)"
               >
-                @if (useNativeCountryOptions()) {
-                  @for (country of filteredCountries(); track country._id) {
-                    <mat-option [value]="country">
-                      <span
-                        class="country-option"
-                        [title]="(country.currency?.symbol || '') + ' - ' + (country.currency?.code || country.iso3) + ' (' + (country.currency?.name || country.name) + ')'"
-                      >
-                        <span class="country-option__symbol">{{ country.currency?.symbol || country.emoji }}</span>
-                        <span class="country-option__details">
-                          <strong>{{ country.currency?.code || country.iso3 }}</strong>
-                          <span>{{ country.currency?.name || country.name }}</span>
-                        </span>
+                <cdk-virtual-scroll-viewport itemSize="52" class="country-viewport">
+                  <mat-option *cdkVirtualFor="let country of filteredCountries()" [value]="country">
+                    <span
+                      class="country-option"
+                      [title]="(country.currency?.symbol || '') + ' - ' + (country.currency?.code || country.iso3) + ' (' + (country.currency?.name || country.name) + ')'"
+                    >
+                      <span class="country-option__symbol">{{ country.currency?.symbol || country.emoji }}</span>
+                      <span class="country-option__details">
+                        <strong>{{ country.currency?.code || country.iso3 }}</strong>
+                        <span>{{ country.currency?.name || country.name }}</span>
                       </span>
-                    </mat-option>
-                  }
-                } @else {
-                  <cdk-virtual-scroll-viewport itemSize="52" class="country-viewport">
-                    <mat-option *cdkVirtualFor="let country of filteredCountries()" [value]="country">
-                      <span
-                        class="country-option"
-                        [title]="(country.currency?.symbol || '') + ' - ' + (country.currency?.code || country.iso3) + ' (' + (country.currency?.name || country.name) + ')'"
-                      >
-                        <span class="country-option__symbol">{{ country.currency?.symbol || country.emoji }}</span>
-                        <span class="country-option__details">
-                          <strong>{{ country.currency?.code || country.iso3 }}</strong>
-                          <span>{{ country.currency?.name || country.name }}</span>
-                        </span>
-                      </span>
-                    </mat-option>
-                  </cdk-virtual-scroll-viewport>
-                }
+                    </span>
+                  </mat-option>
+                </cdk-virtual-scroll-viewport>
               </mat-autocomplete>
               @if (form.controls.country.hasError('required') && countrySearch.touched) {
                 <mat-error>Currency is required</mat-error>

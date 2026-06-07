@@ -1,5 +1,4 @@
-import { isPlatformBrowser } from '@angular/common';
-import { Component, computed, ElementRef, inject, OnInit, PLATFORM_ID, signal, ViewChild } from '@angular/core';
+import { Component, computed, inject, OnInit, signal } from '@angular/core';
 import { ScrollingModule } from '@angular/cdk/scrolling';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
@@ -10,7 +9,7 @@ import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
 import { MatNativeDateModule } from '@angular/material/core';
-import { MatAutocompleteModule, MatAutocompleteSelectedEvent, MatAutocompleteTrigger } from '@angular/material/autocomplete';
+import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatRadioModule } from '@angular/material/radio';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
@@ -23,7 +22,6 @@ import {
 } from 'app/core/shared/components/expense-reference-dialog/expense-reference-dialog';
 import { Loader } from 'app/core/shared/components/loader/loader';
 import { Category, Country, PaymentMethod, SubCategory } from 'app/core/shared/types/expense.model';
-import { CountryPickerDialog } from './country-picker-dialog';
 
 type ExpenseForm = {
   description: FormControl<string>;
@@ -55,21 +53,15 @@ type ExpenseForm = {
     MatSelectModule,
     MatSnackBarModule,
     Loader,
-    CountryPickerDialog,
   ],
   templateUrl: './create.html',
   styleUrl: './create.scss',
 })
 export class Create implements OnInit {
-  @ViewChild(MatAutocompleteTrigger) private countryAutocompleteTrigger?: MatAutocompleteTrigger;
-  @ViewChild('countryInput') private countryInput?: ElementRef<HTMLInputElement>;
-
   private readonly expenseApi = inject(ExpenseApiService);
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
   private readonly router = inject(Router);
-  private readonly platformId = inject(PLATFORM_ID);
-  private countryDialogOpen = false;
 
   protected readonly categories = signal<Category[]>([]);
   protected readonly subCategories = signal<SubCategory[]>([]);
@@ -83,7 +75,6 @@ export class Create implements OnInit {
   protected readonly loadingReferences = signal(false);
   protected readonly referenceActionLoading = signal(false);
   protected readonly loadingText = signal('Loading...');
-  protected readonly useNativeCountryOptions = signal(false);
 
   protected readonly form = new FormGroup<ExpenseForm>({
     description: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(200)] }),
@@ -115,7 +106,6 @@ export class Create implements OnInit {
   });
 
   ngOnInit(): void {
-    this.useNativeCountryOptions.set(this.isIosBrowser());
     this.loadReferences();
     this.form.controls.category.valueChanges.subscribe(() => {
       this.selectedCategory.set(this.form.controls.category.value);
@@ -140,54 +130,11 @@ export class Create implements OnInit {
     this.selectedReceipt.set(input.files?.[0] ?? null);
   }
 
-  protected openCountryPanel(): void {
-    if (!this.countries().length) return;
-
-    if (this.useNativeCountryOptions()) {
-      this.openCountryPickerDialog();
-      return;
-    }
-
-    this.countryInput?.nativeElement.focus();
-
-    window.setTimeout(() => {
-      this.countryAutocompleteTrigger?.openPanel();
-      this.countryAutocompleteTrigger?.updatePosition();
-    }, 120);
-  }
-
   protected selectCountry(event: MatAutocompleteSelectedEvent): void {
-    this.applySelectedCountry(event.option.value as Country);
-  }
-
-  private applySelectedCountry(country: Country): void {
+    const country = event.option.value as Country;
     this.form.controls.country.setValue(country._id);
     this.countrySearch.setValue(this.getCountryLabel(country), { emitEvent: false });
     this.countrySearchTerm.set(this.getCountryLabel(country));
-  }
-
-  private openCountryPickerDialog(): void {
-    if (this.countryDialogOpen) return;
-
-    this.countryAutocompleteTrigger?.closePanel();
-    this.countryInput?.nativeElement.blur();
-    this.countryDialogOpen = true;
-
-    this.dialog.open(CountryPickerDialog, {
-      width: '100vw',
-      maxWidth: '100vw',
-      position: { bottom: '0' },
-      autoFocus: false,
-      restoreFocus: false,
-      panelClass: 'currency-picker-dialog-panel',
-      data: {
-        countries: this.countries(),
-        selectedCountryId: this.form.controls.country.value,
-      },
-    }).afterClosed().pipe(take(1)).subscribe((country?: Country) => {
-      this.countryDialogOpen = false;
-      if (country) this.applySelectedCountry(country);
-    });
   }
 
   protected getCountryLabel(country: Country): string {
@@ -367,13 +314,4 @@ export class Create implements OnInit {
     return  typeof category === 'string' ? category : category._id;
   }
 
-  private isIosBrowser(): boolean {
-    if (!isPlatformBrowser(this.platformId)) return false;
-
-    const userAgent = window.navigator.userAgent;
-    const platform = window.navigator.platform;
-    const hasTouch = window.navigator.maxTouchPoints > 1;
-
-    return /iPad|iPhone|iPod/.test(userAgent) || (platform === 'MacIntel' && hasTouch);
-  }
 }
