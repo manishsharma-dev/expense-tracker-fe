@@ -26,8 +26,8 @@ export type PaymentMethod = {
 export type Country = {
   _id: string;
   name: string;
-  iso2: string;
-  iso3: string;
+  iso2?: string;
+  iso3?: string;
   emoji?: string;
   currency?: {
     code?: string;

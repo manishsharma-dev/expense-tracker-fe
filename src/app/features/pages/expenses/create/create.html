@@ -49,11 +49,11 @@
                   <mat-option *cdkVirtualFor="let country of filteredCountries()" [value]="country">
                     <span
                       class="country-option"
-                      [title]="(country.currency?.symbol || '') + ' - ' + (country.currency?.code || country.iso3) + ' (' + (country.currency?.name || country.name) + ')'"
+                      [title]="(country.currency?.symbol || '') + ' - ' + (country.currency?.code || country.iso3 || country.name) + ' (' + (country.currency?.name || country.name) + ')'"
                     >
                       <span class="country-option__symbol">{{ country.currency?.symbol || country.emoji }}</span>
                       <span class="country-option__details">
-                        <strong>{{ country.currency?.code || country.iso3 }}</strong>
+                        <strong>{{ country.currency?.code || country.iso3 || country.name }}</strong>
                         <span>{{ country.currency?.name || country.name }}</span>
                       </span>
                     </span>

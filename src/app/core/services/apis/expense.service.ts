@@ -55,6 +55,10 @@ export class ExpenseApiService {
     return this.api.get<CommonResponse<ExpenseReferenceResponse>>('countries');
   }
 
+  getUniqueCurrencyCountries() {
+    return this.api.get<CommonResponse<ExpenseReferenceResponse>>('countries/unique-currencies');
+  }
+
   createPaymentMethod(paymentMethod: Pick<PaymentMethod, 'name' | 'type' | 'lastFour' | 'icon'>) {
     return this.api.post<CommonResponse<ExpenseReferenceResponse>>('payment-methods', paymentMethod);
   }

@@ -99,7 +99,7 @@ export class Create implements OnInit {
     return this.countries().filter((country) => {
       const currencyCode = country.currency?.code ?? '';
       const currencyName = country.currency?.name ?? '';
-      return `${country.name} ${country.iso2} ${country.iso3} ${currencyCode} ${currencyName}`
+      return `${country.name} ${country.iso2 ?? ''} ${country.iso3 ?? ''} ${currencyCode} ${currencyName}`
         .toLowerCase()
         .includes(search);
     });
@@ -138,7 +138,7 @@ export class Create implements OnInit {
   }
 
   protected getCountryLabel(country: Country): string {
-    const currencyCode = country.currency?.code ?? country.iso3;
+    const currencyCode = country.currency?.code ?? country.iso3 ?? country.name;
     const currencyName = country.currency?.name;
     const currencySymbol = country.currency?.symbol;
     const prefix = currencySymbol ? `${currencySymbol} - ${currencyCode}` : currencyCode;
@@ -267,7 +267,7 @@ export class Create implements OnInit {
       categories: this.expenseApi.getCategories(),
       subCategories: this.expenseApi.getSubCategories(),
       paymentMethods: this.expenseApi.getPaymentMethods(),
-      countries: this.expenseApi.getCountries(),
+      countries: this.expenseApi.getUniqueCurrencyCountries(),
     }).pipe(
       take(1),
       finalize(() => this.loadingReferences.set(false))
