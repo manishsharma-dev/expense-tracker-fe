@@ -18,9 +18,22 @@ export type SubCategory = {
 export type PaymentMethod = {
   _id: string;
   name: string;
-  type: 'cash' | 'card' | 'upi' | 'bank' | 'wallet' | 'other';
+  type: 'cash' | 'card' | 'debit_card' | 'credit_card' | 'upi' | 'bank' | 'wallet' | 'other';
+  provider?: PaymentProvider;
+  nickname?: string;
   lastFour?: string;
+  upiId?: string;
   icon?: string;
+  sequence?: number;
+};
+
+export type PaymentProvider = {
+  _id: string;
+  code: string;
+  name: string;
+  type: 'bank' | 'upi_app' | 'wallet' | 'cash';
+  icon?: string;
+  country?: string;
 };
 
 export type Country = {
@@ -40,6 +53,7 @@ export type ExpenseReferenceResponse = {
   categories?: Category[];
   subCategories?: SubCategory[];
   paymentMethods?: PaymentMethod[];
+  paymentProviders?: PaymentProvider[];
   countries?: Country[];
   category?: Category;
   subCategory?: SubCategory;

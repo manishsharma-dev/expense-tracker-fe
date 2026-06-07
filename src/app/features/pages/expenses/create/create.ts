@@ -1,6 +1,8 @@
-import { Component, computed, inject, OnInit, signal } from '@angular/core';
+import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
 import { ScrollingModule } from '@angular/cdk/scrolling';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatDatepickerModule } from '@angular/material/datepicker';
@@ -20,8 +22,10 @@ import {
   ExpenseReferenceDialog,
   ExpenseReferenceDialogResult,
 } from 'app/core/shared/components/expense-reference-dialog/expense-reference-dialog';
+import { ConfirmDialog } from 'app/core/shared/components/confirm-dialog/confirm-dialog';
 import { Loader } from 'app/core/shared/components/loader/loader';
-import { Category, Country, PaymentMethod, SubCategory } from 'app/core/shared/types/expense.model';
+import { Category, Country, PaymentMethod, PaymentProvider, SubCategory } from 'app/core/shared/types/expense.model';
+import { PaymentMethodDialog, PaymentMethodDialogResult } from './payment-method-dialog';
 
 type ExpenseForm = {
   description: FormControl<string>;
@@ -38,6 +42,7 @@ type ExpenseForm = {
   selector: 'app-create',
   imports: [
     RouterLink,
+    DragDropModule,
     ScrollingModule,
     ReactiveFormsModule,
     MatButtonModule,
@@ -57,30 +62,37 @@ type ExpenseForm = {
   templateUrl: './create.html',
   styleUrl: './create.scss',
 })
-export class Create implements OnInit {
+export class Create implements OnInit, OnDestroy {
   private readonly expenseApi = inject(ExpenseApiService);
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
   private readonly router = inject(Router);
+  private readonly sanitizer = inject(DomSanitizer);
+  private receiptObjectUrl: string | null = null;
 
   protected readonly categories = signal<Category[]>([]);
   protected readonly subCategories = signal<SubCategory[]>([]);
   protected readonly paymentMethods = signal<PaymentMethod[]>([]);
+  protected readonly paymentProviders = signal<PaymentProvider[]>([]);
   protected readonly countries = signal<Country[]>([]);
   protected readonly countrySearch = new FormControl('', { nonNullable: true });
   protected readonly countrySearchTerm = signal('');
   protected readonly selectedReceipt = signal<File | null>(null);
+  protected readonly receiptPreviewUrl = signal<string | null>(null);
+  protected readonly receiptPreviewSafeUrl = signal<SafeResourceUrl | null>(null);
+  protected readonly receiptPreviewType = signal<'image' | 'pdf' | null>(null);
   protected readonly selectedCategory = signal('');
   protected readonly saving = signal(false);
   protected readonly loadingReferences = signal(false);
   protected readonly referenceActionLoading = signal(false);
   protected readonly loadingText = signal('Loading...');
+  protected readonly maxExpenseDate = new Date();
 
   protected readonly form = new FormGroup<ExpenseForm>({
     description: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(200)] }),
     amount: new FormControl<number | null>(null, [Validators.required, Validators.min(0.01)]),
     country: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
-    date: new FormControl<Date | null>(new Date(), [Validators.required]),
+    date: new FormControl<Date | null>(this.maxExpenseDate, [Validators.required]),
     category: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
     subCategory: new FormControl('', { nonNullable: true }),
     paymentMethod: new FormControl('', { nonNullable: true, validators: [Validators.required] }),
@@ -120,6 +132,10 @@ export class Create implements OnInit {
     });
   }
 
+  ngOnDestroy(): void {
+    this.clearReceiptPreview();
+  }
+
   protected selectCategory(categoryId: string): void {
     this.form.controls.category.setValue(categoryId);
     this.selectedCategory.set(categoryId);
@@ -127,7 +143,14 @@ export class Create implements OnInit {
 
   protected onReceiptSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
-    this.selectedReceipt.set(input.files?.[0] ?? null);
+    this.setReceipt(input.files?.[0] ?? null);
+  }
+
+  protected removeReceipt(input?: HTMLInputElement, event?: Event): void {
+    event?.stopPropagation();
+    event?.preventDefault();
+    if (input) input.value = '';
+    this.setReceipt(null);
   }
 
   protected selectCountry(event: MatAutocompleteSelectedEvent): void {
@@ -143,6 +166,31 @@ export class Create implements OnInit {
     const currencySymbol = country.currency?.symbol;
     const prefix = currencySymbol ? `${currencySymbol} - ${currencyCode}` : currencyCode;
     return currencyName ? `${prefix} (${currencyName})` : `${prefix} (${country.name})`;
+  }
+
+  protected getPaymentMethodTypeLabel(type: PaymentMethod['type']): string {
+    const labels: Record<PaymentMethod['type'], string> = {
+      cash: 'Cash',
+      card: 'Card',
+      debit_card: 'Debit Card',
+      credit_card: 'Credit Card',
+      upi: 'UPI',
+      bank: 'Bank',
+      wallet: 'Wallet',
+      other: 'Other',
+    };
+
+    return labels[type] ?? 'Other';
+  }
+
+  protected getPaymentMethodDetail(method: PaymentMethod): string {
+    const parts = [
+      method.provider?.name,
+      method.lastFour ? `•••• ${method.lastFour}` : '',
+      method.upiId,
+    ].filter(Boolean);
+
+    return parts.join(' • ') || this.getPaymentMethodTypeLabel(method.type);
   }
 
   protected addCategory(): void {
@@ -215,12 +263,107 @@ export class Create implements OnInit {
   }
 
   protected addPaymentMethod(): void {
-    const name = window.prompt('Payment method name');
-    if (!name?.trim()) return;
+    this.openPaymentMethodDialog();
+  }
 
+  protected editPaymentMethod(paymentMethod: PaymentMethod, event?: Event): void {
+    event?.stopPropagation();
+    this.openPaymentMethodDialog(paymentMethod);
+  }
+
+  protected deletePaymentMethod(paymentMethod: PaymentMethod, event?: Event): void {
+    event?.stopPropagation();
+
+    this.dialog.open(ConfirmDialog, {
+      width: '420px',
+      maxWidth: 'calc(100vw - 32px)',
+      data: {
+        title: 'Delete Payment Method',
+        message: `Delete ${paymentMethod.name}? This payment method will no longer be available for new expenses.`,
+        cancelText: 'Cancel',
+        confirmText: 'Delete',
+        confirmIcon: 'delete',
+      },
+    }).afterClosed().pipe(take(1)).subscribe((confirmed) => {
+      if (!confirmed) return;
+
+      this.loadingText.set('Deleting payment method...');
+      this.referenceActionLoading.set(true);
+      this.expenseApi.deletePaymentMethod(paymentMethod._id).pipe(
+        take(1),
+        finalize(() => this.referenceActionLoading.set(false))
+      ).subscribe({
+        next: () => {
+          this.paymentMethods.update((paymentMethods) =>
+            paymentMethods.filter((item) => item._id !== paymentMethod._id)
+          );
+          if (this.form.controls.paymentMethod.value === paymentMethod._id) {
+            this.form.controls.paymentMethod.setValue('');
+          }
+          this.snackBar.open('Payment method deleted', 'Close', { duration: 2500 });
+        },
+        error: () => this.snackBar.open('Could not delete payment method', 'Close', { duration: 2500 }),
+      });
+    });
+  }
+
+  protected reorderPaymentMethods(event: CdkDragDrop<PaymentMethod[]>): void {
+    if (event.previousIndex === event.currentIndex) return;
+
+    const previousPaymentMethods = this.paymentMethods();
+    const reorderedPaymentMethods = [...previousPaymentMethods];
+    moveItemInArray(reorderedPaymentMethods, event.previousIndex, event.currentIndex);
+
+    const sequencedPaymentMethods = reorderedPaymentMethods.map((paymentMethod, index) => ({
+      ...paymentMethod,
+      sequence: index + 1,
+    }));
+
+    this.paymentMethods.set(sequencedPaymentMethods);
+    this.loadingText.set('Updating payment method order...');
+    this.referenceActionLoading.set(true);
+    this.expenseApi.updatePaymentMethodSequence(
+      sequencedPaymentMethods.map((paymentMethod, index) => ({ id: paymentMethod._id, sequence: index + 1 }))
+    ).pipe(
+      take(1),
+      finalize(() => this.referenceActionLoading.set(false))
+    ).subscribe({
+      next: (response) => {
+        this.paymentMethods.set(response.data.paymentMethods ?? sequencedPaymentMethods);
+      },
+      error: () => {
+        this.paymentMethods.set(previousPaymentMethods);
+        this.snackBar.open('Could not update payment method order', 'Close', { duration: 2500 });
+      },
+    });
+  }
+
+  private openPaymentMethodDialog(paymentMethod?: PaymentMethod): void {
+    if (!this.paymentProviders().length) {
+      this.snackBar.open('Could not load payment providers', 'Close', { duration: 2500 });
+      return;
+    }
+
+    this.dialog.open(PaymentMethodDialog, {
+      width: '520px',
+      maxWidth: 'calc(100vw - 32px)',
+      autoFocus: false,
+      data: {
+        paymentMethod,
+        paymentProviders: this.paymentProviders(),
+        existingNames: this.paymentMethods().map((item) => item.name),
+      },
+    }).afterClosed().pipe(take(1)).subscribe((result?: PaymentMethodDialogResult) => {
+      if (!result) return;
+
+      paymentMethod ? this.updatePaymentMethod(paymentMethod, result) : this.createPaymentMethod(result);
+    });
+  }
+
+  private createPaymentMethod(result: PaymentMethodDialogResult): void {
     this.loadingText.set('Creating payment method...');
     this.referenceActionLoading.set(true);
-    this.expenseApi.createPaymentMethod({ name: name.trim(), type: 'other', icon: 'payments' })
+    this.expenseApi.createPaymentMethod(result)
       .pipe(
         take(1),
         finalize(() => this.referenceActionLoading.set(false))
@@ -233,6 +376,27 @@ export class Create implements OnInit {
           this.form.controls.paymentMethod.setValue(paymentMethod._id);
         },
         error: () => this.snackBar.open('Could not create payment method', 'Close', { duration: 2500 }),
+      });
+  }
+
+  private updatePaymentMethod(paymentMethod: PaymentMethod, result: PaymentMethodDialogResult): void {
+    this.loadingText.set('Updating payment method...');
+    this.referenceActionLoading.set(true);
+    this.expenseApi.updatePaymentMethod(paymentMethod._id, result)
+      .pipe(
+        take(1),
+        finalize(() => this.referenceActionLoading.set(false))
+      )
+      .subscribe({
+        next: (response) => {
+          const updatedPaymentMethod = response.data.paymentMethod;
+          if (!updatedPaymentMethod) return;
+          this.paymentMethods.update((paymentMethods) =>
+            paymentMethods.map((item) => item._id === updatedPaymentMethod._id ? updatedPaymentMethod : item)
+          );
+          this.form.controls.paymentMethod.setValue(updatedPaymentMethod._id);
+        },
+        error: () => this.snackBar.open('Could not update payment method', 'Close', { duration: 2500 }),
       });
   }
 
@@ -266,17 +430,21 @@ export class Create implements OnInit {
     forkJoin({
       categories: this.expenseApi.getCategories(),
       subCategories: this.expenseApi.getSubCategories(),
+      paymentProviders: this.expenseApi.getPaymentProviders(),
       paymentMethods: this.expenseApi.getPaymentMethods(),
       countries: this.expenseApi.getUniqueCurrencyCountries(),
     }).pipe(
       take(1),
       finalize(() => this.loadingReferences.set(false))
     ).subscribe({
-      next: ({ categories, subCategories, paymentMethods, countries }) => {
+      next: ({ categories, subCategories, paymentProviders, paymentMethods, countries }) => {
+        const loadedCountries = countries.data.countries ?? [];
         this.categories.set(categories.data.categories ?? []);
         this.subCategories.set(subCategories.data.subCategories ?? []);
+        this.paymentProviders.set(paymentProviders.data.paymentProviders ?? []);
         this.paymentMethods.set(paymentMethods.data.paymentMethods ?? []);
-        this.countries.set(countries.data.countries ?? []);
+        this.countries.set(loadedCountries);
+        this.setDefaultCountryFromBrowser(loadedCountries);
       },
       error: () => this.snackBar.open('Could not load expense details', 'Close', { duration: 2500 }),
     });
@@ -312,6 +480,59 @@ export class Create implements OnInit {
   private getCategoryId(category: string | Category): string {
     if(!category) return '';
     return  typeof category === 'string' ? category : category._id;
+  }
+
+  private setDefaultCountryFromBrowser(countries: Country[]): void {
+    if (this.form.controls.country.value || !countries.length) return;
+
+    const countryCode = this.getBrowserCountryCode();
+    if (!countryCode) return;
+
+    const country = countries.find((item) => item.iso2?.toUpperCase() === countryCode);
+    if (!country) return;
+
+    const countryLabel = this.getCountryLabel(country);
+    this.form.controls.country.setValue(country._id);
+    this.countrySearch.setValue(countryLabel, { emitEvent: false });
+    this.countrySearchTerm.set(countryLabel);
+  }
+
+  private getBrowserCountryCode(): string {
+    if (typeof navigator === 'undefined') return '';
+
+    const locales = [...(navigator.languages ?? []), navigator.language].filter(Boolean);
+    for (const locale of locales) {
+      const parts = locale.replace('_', '-').split('-');
+      const region = parts.slice(1).find((part) => /^[a-z]{2}$/i.test(part));
+      if (region) return region.toUpperCase();
+    }
+
+    return '';
+  }
+
+  private setReceipt(file: File | null): void {
+    this.clearReceiptPreview();
+    this.selectedReceipt.set(file);
+    if (!file) return;
+
+    const previewType = file.type === 'application/pdf' ? 'pdf' : file.type.startsWith('image/') ? 'image' : null;
+    this.receiptPreviewType.set(previewType);
+    if (!previewType) return;
+
+    this.receiptObjectUrl = URL.createObjectURL(file);
+    this.receiptPreviewUrl.set(this.receiptObjectUrl);
+    this.receiptPreviewSafeUrl.set(this.sanitizer.bypassSecurityTrustResourceUrl(this.receiptObjectUrl));
+  }
+
+  private clearReceiptPreview(): void {
+    if (this.receiptObjectUrl && typeof URL !== 'undefined' && 'revokeObjectURL' in URL) {
+      URL.revokeObjectURL(this.receiptObjectUrl);
+    }
+
+    this.receiptObjectUrl = null;
+    this.receiptPreviewUrl.set(null);
+    this.receiptPreviewSafeUrl.set(null);
+    this.receiptPreviewType.set(null);
   }
 
 }

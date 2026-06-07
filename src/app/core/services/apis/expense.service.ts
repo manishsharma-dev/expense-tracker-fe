@@ -51,6 +51,10 @@ export class ExpenseApiService {
     return this.api.get<CommonResponse<ExpenseReferenceResponse>>('payment-methods');
   }
 
+  getPaymentProviders() {
+    return this.api.get<CommonResponse<ExpenseReferenceResponse>>('payment-providers');
+  }
+
   getCountries() {
     return this.api.get<CommonResponse<ExpenseReferenceResponse>>('countries');
   }
@@ -59,8 +63,29 @@ export class ExpenseApiService {
     return this.api.get<CommonResponse<ExpenseReferenceResponse>>('countries/unique-currencies');
   }
 
-  createPaymentMethod(paymentMethod: Pick<PaymentMethod, 'name' | 'type' | 'lastFour' | 'icon'>) {
+  createPaymentMethod(
+    paymentMethod: Pick<PaymentMethod, 'name' | 'type' | 'lastFour' | 'upiId' | 'nickname' | 'icon'> & {
+      provider?: string;
+    }
+  ) {
     return this.api.post<CommonResponse<ExpenseReferenceResponse>>('payment-methods', paymentMethod);
+  }
+
+  updatePaymentMethod(
+    paymentMethodId: string,
+    paymentMethod: Pick<PaymentMethod, 'name' | 'type' | 'lastFour' | 'upiId' | 'nickname' | 'icon'> & {
+      provider?: string;
+    }
+  ) {
+    return this.api.put<CommonResponse<ExpenseReferenceResponse>>(`payment-methods/${paymentMethodId}`, paymentMethod);
+  }
+
+  deletePaymentMethod(paymentMethodId: string) {
+    return this.api.delete<CommonResponse<null>>(`payment-methods/${paymentMethodId}`);
+  }
+
+  updatePaymentMethodSequence(items: Array<{ id: string; sequence: number }>) {
+    return this.api.put<CommonResponse<ExpenseReferenceResponse>>('payment-methods/sequence', { items });
   }
 
   createExpense(expense: FormData) {

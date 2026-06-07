@@ -1,0 +1,95 @@
+<h2 mat-dialog-title>{{ data.paymentMethod ? 'Edit Payment Method' : 'Add Payment Method' }}</h2>
+
+<mat-dialog-content>
+  <form class="payment-method-form" [formGroup]="form">
+    <section class="provider-preview">
+      <span class="provider-preview__icon">
+        <mat-icon aria-hidden="true">{{ selectedProvider()?.icon || 'payments' }}</mat-icon>
+      </span>
+      <span>
+        <strong>{{ selectedProvider()?.name || 'Choose provider' }}</strong>
+        <small>{{ selectedProvider()?.type || 'Bank, app, wallet, or cash' }}</small>
+      </span>
+    </section>
+
+    <mat-form-field appearance="outline" class="full-field">
+      <mat-label>Provider</mat-label>
+      <mat-select formControlName="provider">
+        <mat-select-trigger>
+          {{ selectedProvider()?.name || 'Choose provider' }}
+        </mat-select-trigger>
+        @for (provider of data.paymentProviders; track provider._id) {
+          <mat-option [value]="provider._id">
+            <span class="provider-option">
+              <span class="option-mark" aria-hidden="true">{{ getProviderInitial(provider) }}</span>
+              <span>
+                <strong>{{ provider.name }}</strong>
+                <small>{{ provider.type }}</small>
+              </span>
+            </span>
+          </mat-option>
+        }
+      </mat-select>
+      @if (form.controls.provider.hasError('required')) {
+        <mat-error>Provider is required</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-field">
+      <mat-label>Payment Type</mat-label>
+      <mat-select formControlName="type">
+        <mat-select-trigger>
+          {{ getSelectedTypeLabel() }}
+        </mat-select-trigger>
+        @for (type of typeOptions; track type.value) {
+          <mat-option [value]="type.value">
+            <span class="type-option">
+              <span class="option-mark" aria-hidden="true">{{ type.shortLabel }}</span>
+              {{ type.label }}
+            </span>
+          </mat-option>
+        }
+      </mat-select>
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-field">
+      <mat-label>Display Name</mat-label>
+      <mat-icon matPrefix aria-hidden="true">{{ selectedProvider()?.icon || 'payments' }}</mat-icon>
+      <input matInput formControlName="name" autocomplete="off" placeholder="e.g. HDFC Credit Card" />
+      @if (form.controls.name.hasError('required')) {
+        <mat-error>Name is required</mat-error>
+      } @else if (form.controls.name.hasError('duplicateName')) {
+        <mat-error>This name already exists</mat-error>
+      }
+    </mat-form-field>
+
+    <mat-form-field appearance="outline" class="full-field">
+      <mat-label>Nickname</mat-label>
+      <input matInput formControlName="nickname" autocomplete="off" placeholder="Optional" />
+    </mat-form-field>
+
+    @if (isCardType()) {
+      <mat-form-field appearance="outline" class="full-field">
+        <mat-label>Last 4 digits</mat-label>
+        <input matInput formControlName="lastFour" inputmode="numeric" maxlength="4" autocomplete="off" />
+        @if (form.controls.lastFour.hasError('pattern')) {
+          <mat-error>Use up to 4 digits</mat-error>
+        }
+      </mat-form-field>
+    }
+
+    @if (isUpiType()) {
+      <mat-form-field appearance="outline" class="full-field">
+        <mat-label>UPI ID</mat-label>
+        <input matInput formControlName="upiId" autocomplete="off" placeholder="name@bank" />
+      </mat-form-field>
+    }
+  </form>
+</mat-dialog-content>
+
+<mat-dialog-actions align="end">
+  <button mat-button type="button" (click)="cancel()">Cancel</button>
+  <button mat-flat-button type="button" color="primary" (click)="submit()">
+    {{ data.paymentMethod ? 'Save Changes' : 'Add Payment Method' }}
+  </button>
+</mat-dialog-actions>

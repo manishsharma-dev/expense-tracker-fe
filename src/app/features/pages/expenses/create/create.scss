@@ -178,6 +178,10 @@
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 10px;
+  max-height: 256px;
+  overflow: auto;
+  padding-right: 2px;
+  -webkit-overflow-scrolling: touch;
 }
 
 .subcategory-field {
@@ -243,13 +247,49 @@
 .payment-list {
   display: grid;
   gap: 10px;
+  max-height: 300px;
+  overflow: auto;
+  padding-right: 2px;
+  -webkit-overflow-scrolling: touch;
 }
 
-:host ::ng-deep .payment-list .mat-mdc-radio-button {
-  display: block;
+.payment-row {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 8px;
   border: 1px solid var(--mat-sys-outline-variant);
   border-radius: 8px;
   background: var(--mat-sys-surface-container-lowest, var(--mat-sys-surface));
+}
+
+.payment-drag-handle {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 100%;
+  min-height: 48px;
+  border: 0;
+  border-right: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 8px 0 0 8px;
+  background: transparent;
+  color: var(--mat-sys-on-surface-variant);
+  cursor: grab;
+
+  &:active {
+    cursor: grabbing;
+  }
+
+  mat-icon {
+    font-size: 20px;
+    width: 20px;
+    height: 20px;
+  }
+}
+
+:host ::ng-deep .payment-row .mat-mdc-radio-button {
+  display: block;
+  min-width: 0;
 }
 
 :host ::ng-deep .payment-list .mdc-form-field {
@@ -264,6 +304,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
+  min-width: 0;
   font-weight: 700;
 
   mat-icon {
@@ -271,6 +312,59 @@
     width: 18px;
     height: 18px;
   }
+
+  span {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  strong,
+  small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  small {
+    color: var(--mat-sys-on-surface-variant);
+    font-size: 11px;
+    font-weight: 600;
+  }
+}
+
+.payment-actions {
+  display: flex;
+  align-items: center;
+  padding-right: 6px;
+
+  button {
+    width: 34px;
+    height: 34px;
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.cdk-drag-preview {
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 8px;
+  background: var(--mat-sys-surface-container-lowest, var(--mat-sys-surface));
+  box-shadow: var(--mat-sys-level3);
+}
+
+.cdk-drag-placeholder {
+  opacity: 0.35;
+}
+
+.cdk-drag-animating,
+.payment-list.cdk-drop-list-dragging .payment-row:not(.cdk-drag-placeholder) {
+  transition: transform 180ms ease;
 }
 
 .add-card-button {
@@ -324,6 +418,88 @@
   clip: rect(0 0 0 0);
   clip-path: inset(50%);
   white-space: nowrap;
+}
+
+.receipt-preview {
+  display: grid;
+  gap: 12px;
+  overflow: hidden;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 10px;
+  background: var(--mat-sys-surface-container-lowest, var(--mat-sys-surface));
+}
+
+.receipt-preview__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--mat-sys-outline-variant);
+
+  span {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  strong,
+  small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  strong {
+    font-size: 13px;
+    font-weight: 800;
+  }
+
+  small {
+    color: var(--mat-sys-on-surface-variant);
+    font-size: 11px;
+  }
+}
+
+.receipt-preview__image {
+  display: block;
+  width: calc(100% - 24px);
+  max-height: 360px;
+  margin: 0 12px 12px;
+  border-radius: 8px;
+  object-fit: contain;
+  background: var(--mat-sys-surface-container);
+}
+
+.receipt-preview__pdf {
+  display: grid;
+  gap: 10px;
+  padding: 0 12px 12px;
+
+  iframe {
+    width: 100%;
+    height: 360px;
+    border: 1px solid var(--mat-sys-outline-variant);
+    border-radius: 8px;
+    background: var(--mat-sys-surface-container);
+  }
+
+  a {
+    width: fit-content;
+    color: var(--mat-sys-primary);
+    font-size: 13px;
+    font-weight: 800;
+    text-decoration: none;
+  }
+}
+
+.receipt-preview__fallback {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 12px 22px;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 13px;
 }
 
 .form-actions {
@@ -390,6 +566,15 @@
 
   .receipt-dropzone {
     min-height: 136px;
+  }
+
+  .receipt-preview__image,
+  .receipt-preview__pdf iframe {
+    max-height: 300px;
+  }
+
+  .receipt-preview__pdf iframe {
+    height: 300px;
   }
 
   .form-actions {

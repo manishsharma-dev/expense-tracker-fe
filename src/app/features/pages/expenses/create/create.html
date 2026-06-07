@@ -68,7 +68,13 @@
 
           <mat-form-field appearance="outline" class="compact-field date-field">
             <mat-label>Date</mat-label>
-            <input matInput formControlName="date" [matDatepicker]="picker" placeholder="Oct 15, 2025" />
+            <input
+              matInput
+              formControlName="date"
+              [matDatepicker]="picker"
+              [max]="maxExpenseDate"
+              placeholder="Oct 15, 2025"
+            />
             <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
             <mat-datepicker #picker></mat-datepicker>
           </mat-form-field>
@@ -113,14 +119,53 @@
                 <h3>Payment Method</h3>
                 <button mat-button type="button" (click)="addPaymentMethod()">Add</button>
               </div>
-              <mat-radio-group class="payment-list" formControlName="paymentMethod" aria-label="Payment method">
+              <mat-radio-group
+                class="payment-list"
+                formControlName="paymentMethod"
+                aria-label="Payment method"
+                cdkDropList
+                [cdkDropListData]="paymentMethods()"
+                (cdkDropListDropped)="reorderPaymentMethods($event)"
+              >
                 @for (method of paymentMethods(); track method._id) {
-                  <mat-radio-button [value]="method._id">
-                    <span class="payment-option">
-                      <mat-icon aria-hidden="true">{{ method.icon || 'payments' }}</mat-icon>
-                      {{ method.name }}
-                    </span>
-                  </mat-radio-button>
+                  <div class="payment-row" cdkDrag [cdkDragData]="method">
+                    <button
+                      class="payment-drag-handle"
+                      type="button"
+                      cdkDragHandle
+                      aria-label="Reorder payment method"
+                      (click)="$event.stopPropagation()"
+                    >
+                      <mat-icon aria-hidden="true">drag_indicator</mat-icon>
+                    </button>
+                    <mat-radio-button [value]="method._id">
+                      <span class="payment-option">
+                        <mat-icon aria-hidden="true">{{ method.icon || 'payments' }}</mat-icon>
+                        <span>
+                          <strong>{{ method.name }}</strong>
+                          <small>{{ getPaymentMethodDetail(method) }}</small>
+                        </span>
+                      </span>
+                    </mat-radio-button>
+                    <div class="payment-actions">
+                      <button
+                        mat-icon-button
+                        type="button"
+                        aria-label="Edit payment method"
+                        (click)="editPaymentMethod(method, $event)"
+                      >
+                        <mat-icon aria-hidden="true">edit</mat-icon>
+                      </button>
+                      <button
+                        mat-icon-button
+                        type="button"
+                        aria-label="Delete payment method"
+                        (click)="deletePaymentMethod(method, $event)"
+                      >
+                        <mat-icon aria-hidden="true">delete</mat-icon>
+                      </button>
+                    </div>
+                  </div>
                 }
               </mat-radio-group>
               <button class="add-card-button" type="button" (click)="addPaymentMethod()">+ Add payment method</button>
@@ -148,6 +193,7 @@
             }
             <small>Supports JPG, PNG, WebP, PDF up to 10MB</small>
             <input
+              #receiptInput
               id="receipt-upload"
               class="receipt-input"
               type="file"
@@ -155,6 +201,38 @@
               (change)="onReceiptSelected($event)"
             />
           </label>
+          @if (selectedReceipt()) {
+            <div class="receipt-preview">
+              <div class="receipt-preview__header">
+                <span>
+                  <strong>{{ selectedReceipt()?.name }}</strong>
+                  <small>{{ selectedReceipt()?.type || 'Selected file' }}</small>
+                </span>
+                <button
+                  mat-icon-button
+                  type="button"
+                  aria-label="Remove receipt"
+                  (click)="removeReceipt(receiptInput, $event)"
+                >
+                  <mat-icon aria-hidden="true">close</mat-icon>
+                </button>
+              </div>
+
+              @if (receiptPreviewType() === 'image') {
+                <img class="receipt-preview__image" [src]="receiptPreviewUrl()" alt="Receipt preview" />
+              } @else if (receiptPreviewType() === 'pdf') {
+                <div class="receipt-preview__pdf">
+                  <iframe [src]="receiptPreviewSafeUrl()" title="Receipt PDF preview"></iframe>
+                  <a [href]="receiptPreviewUrl()" target="_blank" rel="noopener">Open PDF in new tab</a>
+                </div>
+              } @else {
+                <div class="receipt-preview__fallback">
+                  <mat-icon aria-hidden="true">draft</mat-icon>
+                  <span>Preview is not available for this file type.</span>
+                </div>
+              }
+            </div>
+          }
         </section>
 
         <div class="form-actions">
