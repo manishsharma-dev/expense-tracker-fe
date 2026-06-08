@@ -1,7 +1,11 @@
 <section class="dashboard">
+  @if (loading()) {
+    <app-loader [overlay]="true" text="Loading dashboard..." />
+  }
+
   <div class="dashboard__intro">
-    <h1>Good morning, John <span aria-hidden="true">👋</span></h1>
-    <p>Here's your financial overview for October 2025</p>
+    <h1>Good morning, {{ userName }}</h1>
+    <p>Here's your financial overview for {{ monthLabel }}</p>
   </div>
 
   <section class="stats-grid" aria-label="Financial summary">
@@ -12,7 +16,11 @@
             <span>{{ stat.label }}</span>
             <mat-icon aria-hidden="true">{{ stat.icon }}</mat-icon>
           </div>
-          <strong class="stat-card__value" [class.stat-card__value--success]="stat.tone === 'success'">
+          <strong
+            class="stat-card__value"
+            [class.stat-card__value--success]="stat.tone === 'success'"
+            [class.stat-card__value--danger]="stat.tone === 'danger'"
+          >
             {{ stat.value }}
           </strong>
           <div class="stat-card__footer">
@@ -21,7 +29,7 @@
               <span class="stat-card__badge">{{ stat.badge }}</span>
             }
           </div>
-          @if (stat.progress) {
+          @if (stat.progress !== undefined) {
             <mat-progress-bar mode="determinate" [value]="stat.progress" aria-label="Budget remaining"></mat-progress-bar>
           }
           @if (stat.miniBars) {
@@ -41,7 +49,7 @@
       <mat-card-header class="panel__header">
         <mat-card-title>Spending Overview</mat-card-title>
         <button mat-stroked-button type="button" class="month-select">
-          October 2025
+          {{ monthLabel }}
           <mat-icon aria-hidden="true">keyboard_arrow_down</mat-icon>
         </button>
       </mat-card-header>
@@ -69,6 +77,8 @@
               </span>
               <strong>{{ category.amount }}</strong>
             </div>
+          } @empty {
+            <p class="empty-text">No category spending yet.</p>
           }
         </div>
       </mat-card-content>
@@ -86,48 +96,52 @@
 
     <mat-card class="transactions-panel" appearance="outlined">
       <mat-card-content>
-        <table mat-table [dataSource]="transactions" class="transactions-table">
-          <ng-container matColumnDef="date">
-            <th mat-header-cell *matHeaderCellDef>Date</th>
-            <td mat-cell *matCellDef="let transaction">{{ transaction.date }}</td>
-          </ng-container>
+        @if (transactions.length) {
+          <table mat-table [dataSource]="transactions" class="transactions-table">
+            <ng-container matColumnDef="date">
+              <th mat-header-cell *matHeaderCellDef>Date</th>
+              <td mat-cell *matCellDef="let transaction">{{ transaction.date }}</td>
+            </ng-container>
 
-          <ng-container matColumnDef="description">
-            <th mat-header-cell *matHeaderCellDef>Description</th>
-            <td mat-cell *matCellDef="let transaction">
-              <span class="transaction-name">
-                <span class="transaction-icon transaction-icon--{{ transaction.color }}">
-                  <mat-icon aria-hidden="true">{{ transaction.icon }}</mat-icon>
+            <ng-container matColumnDef="description">
+              <th mat-header-cell *matHeaderCellDef>Description</th>
+              <td mat-cell *matCellDef="let transaction">
+                <span class="transaction-name">
+                  <span class="transaction-icon transaction-icon--{{ transaction.color }}">
+                    <mat-icon aria-hidden="true">{{ transaction.icon }}</mat-icon>
+                  </span>
+                  <strong>{{ transaction.description }}</strong>
                 </span>
-                <strong>{{ transaction.description }}</strong>
-              </span>
-            </td>
-          </ng-container>
+              </td>
+            </ng-container>
 
-          <ng-container matColumnDef="category">
-            <th mat-header-cell *matHeaderCellDef>Category</th>
-            <td mat-cell *matCellDef="let transaction">{{ transaction.category }}</td>
-          </ng-container>
+            <ng-container matColumnDef="category">
+              <th mat-header-cell *matHeaderCellDef>Category</th>
+              <td mat-cell *matCellDef="let transaction">{{ transaction.category }}</td>
+            </ng-container>
 
-          <ng-container matColumnDef="amount">
-            <th mat-header-cell *matHeaderCellDef>Amount</th>
-            <td mat-cell *matCellDef="let transaction">
-              <strong class="amount">{{ transaction.amount }}</strong>
-            </td>
-          </ng-container>
+            <ng-container matColumnDef="amount">
+              <th mat-header-cell *matHeaderCellDef>Amount</th>
+              <td mat-cell *matCellDef="let transaction">
+                <strong class="amount">{{ transaction.amount }}</strong>
+              </td>
+            </ng-container>
 
-          <ng-container matColumnDef="status">
-            <th mat-header-cell *matHeaderCellDef>Status</th>
-            <td mat-cell *matCellDef="let transaction">
-              <span class="status" [class.status--pending]="transaction.status === 'Pending'">
-                {{ transaction.status }}
-              </span>
-            </td>
-          </ng-container>
+            <ng-container matColumnDef="status">
+              <th mat-header-cell *matHeaderCellDef>Status</th>
+              <td mat-cell *matCellDef="let transaction">
+                <span class="status" [class.status--pending]="transaction.status === 'Pending'">
+                  {{ transaction.status }}
+                </span>
+              </td>
+            </ng-container>
 
-          <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
-          <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
-        </table>
+            <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+            <tr mat-row *matRowDef="let row; columns: displayedColumns;"></tr>
+          </table>
+        } @else {
+          <p class="empty-text empty-text--panel">No recent transactions yet.</p>
+        }
       </mat-card-content>
     </mat-card>
 
@@ -151,6 +165,17 @@
             <span class="status" [class.status--pending]="transaction.status === 'Pending'">
               {{ transaction.status }}
             </span>
+          </mat-card-content>
+        </mat-card>
+      } @empty {
+        <mat-card class="transaction-card" appearance="outlined">
+          <mat-card-content>
+            <div class="transaction-card__body">
+              <strong>No recent transactions</strong>
+              <div class="transaction-card__meta">
+                <span>Add an expense to see it here.</span>
+              </div>
+            </div>
           </mat-card-content>
         </mat-card>
       }

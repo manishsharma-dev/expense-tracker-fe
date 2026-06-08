@@ -25,6 +25,11 @@ import {
 import { ConfirmDialog } from 'app/core/shared/components/confirm-dialog/confirm-dialog';
 import { Loader } from 'app/core/shared/components/loader/loader';
 import { Category, Country, PaymentMethod, PaymentProvider, SubCategory } from 'app/core/shared/types/expense.model';
+import {
+  filterCurrencyCountries,
+  getCountryCurrencyLabel,
+  getDefaultCurrencyCountry,
+} from 'app/core/shared/utils/country-currency';
 import { PaymentMethodDialog, PaymentMethodDialogResult } from './payment-method-dialog';
 
 type ExpenseForm = {
@@ -105,16 +110,7 @@ export class Create implements OnInit, OnDestroy {
   });
 
   protected readonly filteredCountries = computed(() => {
-    const search = this.countrySearchTerm().trim().toLowerCase();
-    if (!search) return this.countries();
-
-    return this.countries().filter((country) => {
-      const currencyCode = country.currency?.code ?? '';
-      const currencyName = country.currency?.name ?? '';
-      return `${country.name} ${country.iso2 ?? ''} ${country.iso3 ?? ''} ${currencyCode} ${currencyName}`
-        .toLowerCase()
-        .includes(search);
-    });
+    return filterCurrencyCountries(this.countries(), this.countrySearchTerm());
   });
 
   ngOnInit(): void {
@@ -126,7 +122,7 @@ export class Create implements OnInit, OnDestroy {
     this.countrySearch.valueChanges.subscribe((value) => {
       this.countrySearchTerm.set(value);
       const selectedCountry = this.countries().find((country) => country._id === this.form.controls.country.value);
-      if (selectedCountry && value !== this.getCountryLabel(selectedCountry)) {
+      if (selectedCountry && value !== getCountryCurrencyLabel(selectedCountry)) {
         this.form.controls.country.setValue('');
       }
     });
@@ -156,16 +152,9 @@ export class Create implements OnInit, OnDestroy {
   protected selectCountry(event: MatAutocompleteSelectedEvent): void {
     const country = event.option.value as Country;
     this.form.controls.country.setValue(country._id);
-    this.countrySearch.setValue(this.getCountryLabel(country), { emitEvent: false });
-    this.countrySearchTerm.set(this.getCountryLabel(country));
-  }
-
-  protected getCountryLabel(country: Country): string {
-    const currencyCode = country.currency?.code ?? country.iso3 ?? country.name;
-    const currencyName = country.currency?.name;
-    const currencySymbol = country.currency?.symbol;
-    const prefix = currencySymbol ? `${currencySymbol} - ${currencyCode}` : currencyCode;
-    return currencyName ? `${prefix} (${currencyName})` : `${prefix} (${country.name})`;
+    const countryLabel = getCountryCurrencyLabel(country);
+    this.countrySearch.setValue(countryLabel, { emitEvent: false });
+    this.countrySearchTerm.set(countryLabel);
   }
 
   protected getPaymentMethodTypeLabel(type: PaymentMethod['type']): string {
@@ -485,29 +474,13 @@ export class Create implements OnInit, OnDestroy {
   private setDefaultCountryFromBrowser(countries: Country[]): void {
     if (this.form.controls.country.value || !countries.length) return;
 
-    const countryCode = this.getBrowserCountryCode();
-    if (!countryCode) return;
-
-    const country = countries.find((item) => item.iso2?.toUpperCase() === countryCode);
+    const country = getDefaultCurrencyCountry(countries);
     if (!country) return;
 
-    const countryLabel = this.getCountryLabel(country);
+    const countryLabel = getCountryCurrencyLabel(country);
     this.form.controls.country.setValue(country._id);
     this.countrySearch.setValue(countryLabel, { emitEvent: false });
     this.countrySearchTerm.set(countryLabel);
-  }
-
-  private getBrowserCountryCode(): string {
-    if (typeof navigator === 'undefined') return '';
-
-    const locales = [...(navigator.languages ?? []), navigator.language].filter(Boolean);
-    for (const locale of locales) {
-      const parts = locale.replace('_', '-').split('-');
-      const region = parts.slice(1).find((part) => /^[a-z]{2}$/i.test(part));
-      if (region) return region.toUpperCase();
-    }
-
-    return '';
   }
 
   private setReceipt(file: File | null): void {

@@ -4,15 +4,22 @@ import {
   Component,
   ElementRef,
   OnDestroy,
+  OnInit,
   PLATFORM_ID,
   ViewChild,
   inject,
+  signal,
 } from '@angular/core';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatIconModule } from '@angular/material/icon';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
+import { finalize, take } from 'rxjs';
+import { DashboardApiService } from 'app/core/services/apis/dashboard.service';
+import { Loader } from 'app/core/shared/components/loader/loader';
+import { DashboardData } from 'app/core/shared/types/dashboard.model';
 import type { Chart, ChartConfiguration } from 'chart.js';
 
 type StatCard = {
@@ -44,93 +51,138 @@ type Transaction = {
     MatCardModule,
     MatIconModule,
     MatProgressBarModule,
+    MatSnackBarModule,
     MatTableModule,
+    Loader,
   ],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss',
 })
-export class Dashboard implements AfterViewInit, OnDestroy {
+export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('spendingCanvas') private spendingCanvas?: ElementRef<HTMLCanvasElement>;
   @ViewChild('categoryCanvas') private categoryCanvas?: ElementRef<HTMLCanvasElement>;
 
   private readonly platformId = inject(PLATFORM_ID);
+  private readonly dashboardApi = inject(DashboardApiService);
+  private readonly snackBar = inject(MatSnackBar);
   private readonly isBrowser = isPlatformBrowser(this.platformId);
   private spendingChart?: Chart;
   private categoryChart?: Chart;
   private themeObserver?: MutationObserver;
+  private loadDashboardTimer?: ReturnType<typeof setTimeout>;
+  private viewReady = false;
 
   protected readonly displayedColumns = ['date', 'description', 'category', 'amount', 'status'];
+  protected readonly loading = signal(false);
 
-  protected readonly stats: StatCard[] = [
-    {
-      label: 'Total Spent',
-      value: '$3,248.50',
-      detail: 'This month',
-      icon: 'trending_down',
-      badge: '-12% vs last month',
-      tone: 'danger',
-    },
-    {
-      label: 'Budget Remaining',
-      value: '$1,751.50',
-      detail: 'of $5,000 budget',
-      icon: 'savings',
-      tone: 'success',
-      progress: 64,
-    },
-    {
-      label: 'Transactions',
-      value: '47',
-      detail: 'This month',
-      icon: 'swap_horiz',
-      miniBars: [18, 24, 30, 48, 62, 38],
-    },
-    {
-      label: 'Largest Expense',
-      value: '$620.00',
-      detail: 'Rent · Oct 1',
-      icon: 'home',
-    },
-  ];
+  protected userName = 'there';
+  protected monthLabel = '';
+  protected currencyCode = 'INR';
+  protected stats: StatCard[] = [];
+  protected monthlySpend: Array<{ month: string; value: number }> = [];
+  protected categories: Array<{ name: string; amount: string; value: number; colorVar: string }> = [];
+  protected transactions: Transaction[] = [];
 
-  protected readonly monthlySpend = [
-    { month: 'May', value: 2380 },
-    { month: 'Jun', value: 2870 },
-    { month: 'Jul', value: 3060 },
-    { month: 'Aug', value: 2700 },
-    { month: 'Sep', value: 3700 },
-    { month: 'Oct', value: 3200 },
-  ];
-
-  protected readonly categories = [
-    { name: 'Food & Dining', amount: '$820', value: 820, colorVar: '--mat-sys-tertiary' },
-    { name: 'Transport', amount: '$430', value: 430, colorVar: '--mat-sys-primary' },
-    { name: 'Housing', amount: '$620', value: 620, colorVar: '--mat-sys-on-surface' },
-    { name: 'Entertainment', amount: '$310', value: 310, colorVar: '--mat-sys-secondary' },
-    { name: 'Health', amount: '$280', value: 280, colorVar: '--mat-sys-inverse-primary' },
-    { name: 'Other', amount: '$788.50', value: 788.5, colorVar: '--mat-sys-outline' },
-  ];
-
-  protected readonly transactions: Transaction[] = [
-    { date: 'Oct 15', description: 'Netflix Subscription', category: 'Entertainment', amount: '-$15.99', status: 'Completed', icon: 'redeem', color: 'purple' },
-    { date: 'Oct 14', description: 'Uber Ride', category: 'Transport', amount: '-$12.40', status: 'Completed', icon: 'directions_car', color: 'teal' },
-    { date: 'Oct 13', description: 'Whole Foods', category: 'Food & Dining', amount: '-$87.30', status: 'Completed', icon: 'restaurant', color: 'orange' },
-    { date: 'Oct 12', description: 'Electricity Bill', category: 'Utilities', amount: '-$94.00', status: 'Pending', icon: 'bolt', color: 'gray' },
-    { date: 'Oct 10', description: 'Gym Membership', category: 'Health', amount: '-$45.00', status: 'Completed', icon: 'fitness_center', color: 'green' },
-  ];
+  ngOnInit(): void {
+    this.loadDashboardTimer = setTimeout(() => {
+      this.loadDashboardTimer = undefined;
+      this.loadDashboard();
+    });
+  }
 
   async ngAfterViewInit(): Promise<void> {
     if (!this.isBrowser) return;
 
+    this.viewReady = true;
     await this.renderCharts();
     this.themeObserver = new MutationObserver(() => void this.renderCharts());
     this.themeObserver.observe(document.body, { attributes: true, attributeFilter: ['class'] });
   }
 
   ngOnDestroy(): void {
+    if (this.loadDashboardTimer) clearTimeout(this.loadDashboardTimer);
     this.themeObserver?.disconnect();
     this.spendingChart?.destroy();
     this.categoryChart?.destroy();
+  }
+
+  private loadDashboard(): void {
+    this.loading.set(true);
+    this.dashboardApi.getDashboard().pipe(
+      take(1),
+      finalize(() => this.loading.set(false))
+    ).subscribe({
+      next: (response) => {
+        this.applyDashboardData(response.data.dashboard);
+        if (this.viewReady) void this.renderCharts();
+      },
+      error: () => {
+        this.snackBar.open('Could not load dashboard data', 'Close', { duration: 2500 });
+      },
+    });
+  }
+
+  private applyDashboardData(data: DashboardData): void {
+    this.userName = data.user.name;
+    this.monthLabel = data.monthLabel;
+    this.currencyCode = data.currencyCode || 'INR';
+    this.monthlySpend = data.monthlySpend;
+    this.categories = data.categorySpend.map((category) => ({
+      name: category.name,
+      amount: this.formatCurrency(category.amount),
+      value: category.value,
+      colorVar: this.getCategoryColorVar(category.color),
+    }));
+    this.transactions = data.recentTransactions.map((transaction) => ({
+      date: this.formatShortDate(transaction.date),
+      description: transaction.description,
+      category: transaction.category,
+      amount: `-${this.formatCurrency(transaction.amount)}`,
+      status: transaction.status,
+      icon: transaction.icon,
+      color: transaction.color,
+    }));
+    this.stats = this.createStats(data);
+  }
+
+  private createStats(data: DashboardData): StatCard[] {
+    const summary = data.summary;
+    const budgetProgress = summary.totalBudget
+      ? Math.max(0, Math.min((summary.budgetRemaining / summary.totalBudget) * 100, 100))
+      : 0;
+
+    return [
+      {
+        label: 'Total Spent',
+        value: this.formatCurrency(summary.totalSpent),
+        detail: 'This month',
+        icon: 'trending_down',
+        badge: this.getSpendChangeBadge(summary.spentChangePercent),
+        tone: summary.spentChangePercent <= 0 ? 'success' : 'danger',
+      },
+      {
+        label: 'Budget Remaining',
+        value: this.formatCurrency(summary.budgetRemaining),
+        detail: summary.totalBudget ? `of ${this.formatCurrency(summary.totalBudget)} budget` : 'No budget set',
+        icon: 'savings',
+        tone: summary.budgetRemaining >= 0 ? 'success' : 'danger',
+        progress: budgetProgress,
+      },
+      {
+        label: 'Transactions',
+        value: String(summary.transactionCount),
+        detail: 'This month',
+        icon: 'swap_horiz',
+        miniBars: this.getMiniBars(data.monthlySpend),
+      },
+      {
+        label: 'Earned vs Spent',
+        value: this.formatCurrency(summary.netAmount),
+        detail: `${this.formatCurrency(summary.totalEarned)} earned / ${this.formatCurrency(summary.totalSpent)} spent`,
+        icon: summary.spentMoreThanEarned ? 'warning' : 'trending_up',
+        tone: summary.spentMoreThanEarned ? 'danger' : 'success',
+      },
+    ];
   }
 
   private async renderCharts(): Promise<void> {
@@ -157,6 +209,8 @@ export class Dashboard implements AfterViewInit, OnDestroy {
     const surfaceText = styles.getPropertyValue('--mat-sys-on-surface').trim();
     const variantText = styles.getPropertyValue('--mat-sys-on-surface-variant').trim();
     const gridColor = styles.getPropertyValue('--mat-sys-outline-variant').trim();
+    const maxSpend = Math.max(...this.monthlySpend.map((item) => item.value), 0);
+    const yMax = maxSpend ? Math.ceil((maxSpend * 1.2) / 100) * 100 : 100;
 
     return {
       type: 'bar',
@@ -181,10 +235,7 @@ export class Dashboard implements AfterViewInit, OnDestroy {
           tooltip: {
             displayColors: false,
             callbacks: {
-              label: (context) => {
-                const value = context.parsed.y ?? 0;
-                return `$${value.toLocaleString()}`;
-              },
+              label: (context) => this.formatCurrency(context.parsed.y ?? 0),
             },
           },
         },
@@ -196,11 +247,8 @@ export class Dashboard implements AfterViewInit, OnDestroy {
           },
           y: {
             min: 0,
-            max: 3800,
-            ticks: {
-              stepSize: 950,
-              color: variantText,
-            },
+            max: yMax,
+            ticks: { color: variantText },
             grid: { color: gridColor },
             border: { display: false },
           },
@@ -213,17 +261,18 @@ export class Dashboard implements AfterViewInit, OnDestroy {
     const styles = getComputedStyle(document.body);
     const panelColor = styles.getPropertyValue('--mat-sys-surface-container-low').trim()
       || styles.getPropertyValue('--mat-sys-surface').trim();
+    const hasCategories = this.categories.length > 0;
 
     return {
       type: 'doughnut',
       data: {
-        labels: this.categories.map((category) => category.name),
+        labels: hasCategories ? this.categories.map((category) => category.name) : ['No spending'],
         datasets: [
           {
-            data: this.categories.map((category) => category.value),
-            backgroundColor: this.categories.map((category) =>
-              styles.getPropertyValue(category.colorVar).trim(),
-            ),
+            data: hasCategories ? this.categories.map((category) => category.value) : [1],
+            backgroundColor: hasCategories
+              ? this.categories.map((category) => styles.getPropertyValue(category.colorVar).trim())
+              : [styles.getPropertyValue('--mat-sys-outline-variant').trim()],
             borderColor: panelColor,
             borderWidth: 0,
             hoverOffset: 3,
@@ -239,11 +288,51 @@ export class Dashboard implements AfterViewInit, OnDestroy {
           legend: { display: false },
           tooltip: {
             callbacks: {
-              label: (context) => `${context.label}: $${Number(context.parsed).toLocaleString()}`,
+              label: (context) => `${context.label}: ${this.formatCurrency(Number(context.parsed) || 0)}`,
             },
           },
         },
       },
     };
+  }
+
+  private formatCurrency(value: number): string {
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: this.currencyCode,
+      maximumFractionDigits: value % 1 ? 2 : 0,
+    }).format(value);
+  }
+
+  private formatShortDate(date: string): string {
+    return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric' }).format(new Date(date));
+  }
+
+  private getSpendChangeBadge(percent: number): string {
+    if (!percent) return 'No change vs last month';
+    const sign = percent > 0 ? '+' : '';
+    return `${sign}${percent}% vs last month`;
+  }
+
+  private getMiniBars(monthlySpend: Array<{ value: number }>): number[] {
+    const maxValue = Math.max(...monthlySpend.map((item) => item.value), 0);
+    if (!maxValue) return [8, 8, 8, 8, 8, 8];
+    return monthlySpend.map((item) => Math.max(8, Math.round((item.value / maxValue) * 100)));
+  }
+
+  private getCategoryColorVar(color?: string): string {
+    const colorMap: Record<string, string> = {
+      orange: '--mat-sys-tertiary',
+      amber: '--mat-sys-tertiary',
+      yellow: '--mat-sys-tertiary',
+      teal: '--mat-sys-primary',
+      blue: '--mat-sys-primary',
+      purple: '--mat-sys-secondary',
+      pink: '--mat-sys-error',
+      green: '--mat-sys-inverse-primary',
+      neutral: '--mat-sys-outline',
+    };
+
+    return colorMap[color ?? 'neutral'] ?? '--mat-sys-outline';
   }
 }

@@ -1,1 +1,132 @@
-<p>earnings works!</p>
+<section class="earnings-page">
+  <header class="page-header">
+    <div>
+      <h1>Earnings</h1>
+      <p>Track salary, rental income, dividends, and other money coming in.</p>
+    </div>
+    <button mat-flat-button type="button" class="save-button" [disabled]="saving()" (click)="saveEarning()">
+      <mat-icon aria-hidden="true">add_circle</mat-icon>
+      Add Earning
+    </button>
+  </header>
+
+  <div class="content-grid">
+    <mat-card class="form-card" appearance="outlined">
+      @if (loading() || saving()) {
+        <app-loader [overlay]="true" [text]="saving() ? 'Saving earning...' : 'Loading earnings...'" />
+      }
+
+      <mat-card-content>
+        <form class="earning-form" [formGroup]="form">
+          <div class="two-column">
+            <mat-form-field appearance="outline">
+              <mat-label>Amount</mat-label>
+              <mat-icon matPrefix aria-hidden="true">payments</mat-icon>
+              <input matInput type="number" formControlName="amount" placeholder="0.00" />
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Date</mat-label>
+              <input matInput formControlName="date" [matDatepicker]="earningDatePicker" [max]="maxEarningDate" />
+              <mat-datepicker-toggle matIconSuffix [for]="earningDatePicker"></mat-datepicker-toggle>
+              <mat-datepicker #earningDatePicker></mat-datepicker>
+            </mat-form-field>
+          </div>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Currency</mat-label>
+            <mat-icon matPrefix aria-hidden="true">search</mat-icon>
+            <input
+              matInput
+              [formControl]="countrySearch"
+              [matAutocomplete]="countryAuto"
+              placeholder="Search country or currency"
+              autocomplete="off"
+            />
+            <mat-autocomplete
+              #countryAuto="matAutocomplete"
+              class="country-autocomplete-panel"
+              (optionSelected)="selectCountry($event)"
+            >
+              <cdk-virtual-scroll-viewport itemSize="52" class="country-viewport">
+                <mat-option *cdkVirtualFor="let country of filteredCountries()" [value]="country">
+                  <span
+                    class="country-option"
+                    [title]="(country.currency?.symbol || '') + ' - ' + (country.currency?.code || country.iso3 || country.name) + ' (' + (country.currency?.name || country.name) + ')'"
+                  >
+                    <span class="country-option__symbol">{{ country.currency?.symbol || country.emoji }}</span>
+                    <span class="country-option__details">
+                      <strong>{{ country.currency?.code || country.iso3 || country.name }}</strong>
+                      <span>{{ country.currency?.name || country.name }}</span>
+                    </span>
+                  </span>
+                </mat-option>
+              </cdk-virtual-scroll-viewport>
+            </mat-autocomplete>
+          </mat-form-field>
+
+          <div class="category-header">
+            <h2>Category</h2>
+            <button mat-button type="button" (click)="addCategory()">Add category</button>
+          </div>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Earning category</mat-label>
+            <mat-select formControlName="category">
+              @for (category of categories(); track category._id) {
+                <mat-option [value]="category._id">
+                  {{ category.name }}
+                </mat-option>
+              }
+            </mat-select>
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Description</mat-label>
+            <mat-icon matPrefix aria-hidden="true">description</mat-icon>
+            <input matInput formControlName="description" placeholder="e.g. June salary" />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Notes</mat-label>
+            <textarea matInput formControlName="notes" rows="3"></textarea>
+          </mat-form-field>
+        </form>
+      </mat-card-content>
+    </mat-card>
+
+    <aside class="summary-stack">
+      <mat-card class="summary-card" appearance="outlined">
+        <mat-card-content>
+          <span>Total Earnings</span>
+          <strong>{{ totalEarned() | currency:selectedCurrencyCode():'symbol':'1.0-0' }}</strong>
+          <small>{{ earnings().length }} records</small>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="list-card" appearance="outlined">
+        <mat-card-header>
+          <mat-card-title>Recent Earnings</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <div class="earning-list">
+            @for (earning of earnings(); track earning._id) {
+              <div class="earning-row">
+                <span class="earning-icon">
+                  <mat-icon aria-hidden="true">{{ earning.category.icon || 'trending_up' }}</mat-icon>
+                </span>
+                <span>
+                  <strong>{{ earning.description }}</strong>
+                  <small>{{ formatDate(earning.date) }} · {{ earning.category.name }}</small>
+                </span>
+                <b>{{ earning.amount | currency:earningCurrencyCode(earning):'symbol':'1.0-0' }}</b>
+              </div>
+            } @empty {
+              <p class="empty-text">No earnings added yet.</p>
+            }
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </aside>
+  </div>
+</section>

@@ -1,1 +1,111 @@
-<p>budget works!</p>
+<section class="budget-page">
+  <header class="page-header">
+    <div>
+      <h1>Budget</h1>
+      <p>Set a monthly budget and optionally split it across categories.</p>
+    </div>
+    <button
+      mat-flat-button
+      type="button"
+      class="save-button"
+      [disabled]="loading() || saving() || isOverAllocated()"
+      (click)="saveBudget()"
+    >
+      <mat-icon aria-hidden="true">save</mat-icon>
+      Save Budget
+    </button>
+  </header>
+
+  <mat-card class="budget-card" appearance="outlined">
+    @if (loading() || saving()) {
+      <app-loader [overlay]="true" [text]="saving() ? 'Saving budget...' : 'Loading budget...'" />
+    }
+
+    <mat-card-content>
+      <form class="budget-form" [formGroup]="form">
+        <section class="summary-grid">
+          <mat-form-field appearance="outline">
+            <mat-label>Month</mat-label>
+            <input matInput type="month" formControlName="month" readonly />
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>Total budget</mat-label>
+            <mat-icon matPrefix aria-hidden="true">account_balance_wallet</mat-icon>
+            <input matInput type="number" formControlName="totalAmount" placeholder="0.00" />
+          </mat-form-field>
+
+          <div class="summary-tile">
+            <span>Allocated</span>
+            <strong>{{ allocatedAmount() | currency:'INR':'symbol':'1.0-0' }}</strong>
+            <small>{{ selectedCategoryCount() }} categories</small>
+          </div>
+
+          <div class="summary-tile" [class.summary-tile--error]="isOverAllocated()">
+            <span>Remaining</span>
+            <strong>{{ remainingAmount() | currency:'INR':'symbol':'1.0-0' }}</strong>
+            <small>
+              @if (totalAmount()) {
+                From total budget
+              } @else {
+                No total budget set
+              }
+            </small>
+          </div>
+        </section>
+
+        <section class="progress-section">
+          <mat-progress-bar
+            mode="determinate"
+            [value]="allocationProgress()"
+            aria-label="Allocated budget progress"
+          ></mat-progress-bar>
+          @if (isOverAllocated()) {
+            <p class="error-text">Category budgets cannot exceed the total budget.</p>
+          } @else if (totalAmount()) {
+            <p>{{ remainingAmount() | currency:'INR':'symbol':'1.0-0' }} available after category budgets.</p>
+          } @else {
+            <p>Set a total budget, or use category budgets independently.</p>
+          }
+        </section>
+
+        <section class="category-section">
+          <div class="section-title-row">
+            <div>
+              <h2>Category Budgets</h2>
+              <p>Enable categories only when you want to reserve part of the budget for them.</p>
+            </div>
+            <button mat-button type="button" (click)="resetAllocations()">Clear categories</button>
+          </div>
+
+          <div class="category-list" formArrayName="allocations">
+            @for (allocation of allocationControls(); track allocation.controls.categoryId.value; let index = $index) {
+              <div class="category-row" [formGroupName]="index">
+                <mat-checkbox formControlName="selected">
+                  <span class="category-label">
+                    <mat-icon aria-hidden="true">{{ categories()[index]?.icon || 'category' }}</mat-icon>
+                    <span>
+                      <strong>{{ categories()[index]?.name }}</strong>
+                      <small>{{ categories()[index]?.isSystem ? 'Common category' : 'Custom category' }}</small>
+                    </span>
+                  </span>
+                </mat-checkbox>
+
+                <mat-form-field appearance="outline" class="amount-field">
+                  <mat-label>Budget</mat-label>
+                  <input
+                    matInput
+                    type="number"
+                    formControlName="amount"
+                    placeholder="0.00"
+                    [readonly]="!allocation.controls.selected.value"
+                  />
+                </mat-form-field>
+              </div>
+            }
+          </div>
+        </section>
+      </form>
+    </mat-card-content>
+  </mat-card>
+</section>
