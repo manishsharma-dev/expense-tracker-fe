@@ -25,6 +25,10 @@ export class AuthService {
     return this._api.post<CommonResponse<null>>('auth/logout', {});
   }
 
+  me() {
+    return this._api.get<CommonResponse<{ user: unknown }>>('auth/me');
+  }
+
   private getDeviceId(): string | undefined {
     if (typeof localStorage === 'undefined') {
       return undefined;

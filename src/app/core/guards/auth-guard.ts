@@ -1,34 +1,28 @@
 // src/app/core/guards/auth.guard.ts
-import { CanActivateFn, Router } from '@angular/router';
-import { inject, PLATFORM_ID, Injector } from '@angular/core';
-import { isPlatformBrowser } from '@angular/common';
+import { inject, Injector } from '@angular/core';
 import { IS_DISCOVERING_ROUTES } from '@angular/ssr';
-import { AuthService } from '../services/auth';
-import { STORAGE_KEY } from '../shared/constants';
-import { REQUEST } from '@angular/core';
+import { CanActivateFn, Router } from '@angular/router';
+import { catchError, map, of } from 'rxjs';
+import { AuthService as AuthApiService } from '../services/apis/auth.service';
+import { AuthService as AuthStateService } from '../services/auth';
 
 export const authGuard: CanActivateFn = () => {
-  const platformId = inject(PLATFORM_ID);
   const router = inject(Router);
-  const authService = inject(AuthService);
   const injector = inject(Injector);
+  const authApiService = inject(AuthApiService);
+  const authStateService = inject(AuthStateService);
 
-  // ✅ Skip during build-time route extraction
   const isDiscovering = injector.get(IS_DISCOVERING_ROUTES, false, { optional: true });
   if (isDiscovering) return true;
 
-  if (isPlatformBrowser(platformId)) {
-    return authService.isLoggedIn()
-      ? true
-      : router.createUrlTree(['/auth/login']);
-  }
-
-  // ✅ Server — read cookie from REQUEST
-  const request = injector.get(REQUEST, null, { optional: true });
-  const cookieHeader = request?.headers?.get('cookie') ?? '';
-  const match = cookieHeader.match(
-    new RegExp(`(?:^|;\\s*)${STORAGE_KEY}=([^;]+)`)
+  return authApiService.me().pipe(
+    map((response) => {
+      authStateService.setUser(response.data.user);
+      return true;
+    }),
+    catchError(() => {
+      authStateService.logout();
+      return of(router.createUrlTree(['/auth/login']));
+    })
   );
-  const hasToken = !!match?.[1];
-  return hasToken ? true : router.createUrlTree(['/auth/login']);
 };

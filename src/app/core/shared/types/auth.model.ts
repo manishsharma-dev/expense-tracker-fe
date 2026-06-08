@@ -3,7 +3,6 @@ export type OtpRequest = {
 };
 
 export type LoginResponse = {
-    token: string;
     sessionId?: string;
     user?: unknown;
 };

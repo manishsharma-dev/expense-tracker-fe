@@ -78,4 +78,6 @@ Environment variable:
 API_BASE_URL=https://expense-tracker-be-woo0.onrender.com/api
 ```
 
+The backend must include this frontend origin in `CORS_ORIGIN` because authentication uses HttpOnly cookies.
+
 If the Render hostname changes, add the new host to `security.allowedHosts` in `angular.json`.

@@ -88,7 +88,7 @@ export class Login {
       finalize(() => this.loading.set(false))
     ).subscribe({
       next: (response) => {
-        this.authHelper.login(response.data.token);
+        this.authHelper.login(response.data.user);
         this.router.navigate(['/']);
       },
       error: (error) => {

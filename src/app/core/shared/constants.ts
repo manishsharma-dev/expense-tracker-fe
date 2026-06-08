@@ -1,7 +1,5 @@
 import { MenuItem } from './types/menu.model';
 
-export const STORAGE_KEY = 'auth_token';
-
 export const MENU_ITEMS: MenuItem[] = [
   {
     label: 'Dashboard',
