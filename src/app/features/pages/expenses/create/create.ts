@@ -30,6 +30,7 @@ import {
   getCountryCurrencyLabel,
   getDefaultCurrencyCountry,
 } from 'app/core/shared/utils/country-currency';
+import { formatDateOnly } from 'app/core/shared/utils/date';
 import { PaymentMethodDialog, PaymentMethodDialogResult } from './payment-method-dialog';
 
 type ExpenseForm = {
@@ -456,7 +457,7 @@ export class Create implements OnInit, OnDestroy {
     const formData = new FormData();
     formData.append('description', raw.description);
     formData.append('amount', String(raw.amount));
-    formData.append('date', raw.date?.toISOString() ?? new Date().toISOString());
+    formData.append('date', formatDateOnly(raw.date ?? new Date()));
     formData.append('category', raw.category);
     formData.append('paymentMethod', raw.paymentMethod);
     formData.append('country', raw.country);

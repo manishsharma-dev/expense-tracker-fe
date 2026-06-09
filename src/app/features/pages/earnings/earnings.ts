@@ -28,6 +28,7 @@ import {
   getCountryCurrencyLabel,
   getDefaultCurrencyCountry,
 } from 'app/core/shared/utils/country-currency';
+import { formatDateOnly } from 'app/core/shared/utils/date';
 
 @Component({
   selector: 'app-earnings',
@@ -151,7 +152,7 @@ export class Earnings implements OnInit {
     this.saving.set(true);
     this.earningApi.createEarning({
       amount: Number(raw.amount),
-      date: raw.date?.toISOString() ?? new Date().toISOString(),
+      date: formatDateOnly(raw.date ?? new Date()),
       category: raw.category,
       country: raw.country,
       description: raw.description,
