@@ -4,6 +4,7 @@ import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
 import { MatInputModule } from '@angular/material/input';
@@ -16,6 +17,7 @@ import { debounceTime, distinctUntilChanged, EMPTY, finalize, forkJoin, merge, s
 import { ExpenseApiService } from 'app/core/services/apis/expense.service';
 import { Loader } from 'app/core/shared/components/loader/loader';
 import { Category, Expense, PaymentMethod } from 'app/core/shared/types/expense.model';
+import { ReceiptPreviewDialog } from './receipt-preview-dialog';
 
 @Component({
   selector: 'app-expenses-master',
@@ -26,6 +28,7 @@ import { Category, Expense, PaymentMethod } from 'app/core/shared/types/expense.
     MatButtonModule,
     MatCardModule,
     MatCheckboxModule,
+    MatDialogModule,
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
@@ -45,6 +48,7 @@ export class Master implements OnInit, AfterViewInit {
 
   private readonly expenseApi = inject(ExpenseApiService);
   private readonly datePipe = inject(DatePipe);
+  private readonly dialog = inject(MatDialog);
 
   protected readonly displayedColumns = [
     'select',
@@ -52,6 +56,7 @@ export class Master implements OnInit, AfterViewInit {
     'description',
     'category',
     'paymentMethod',
+    'receipt',
     'amount',
     'actions',
   ];
@@ -130,6 +135,21 @@ export class Master implements OnInit, AfterViewInit {
 
   protected iconColor(expense: Expense): string {
     return expense.category.color ?? 'neutral';
+  }
+
+  protected hasReceipt(expense: Expense): boolean {
+    return Boolean(expense.receipt?.viewUrl || expense.receipt?.url || expense.receipt?.path);
+  }
+
+  protected openReceipt(expense: Expense): void {
+    if (!expense.receipt || !this.hasReceipt(expense)) return;
+
+    this.dialog.open(ReceiptPreviewDialog, {
+      width: 'min(920px, calc(100vw - 28px))',
+      maxWidth: 'calc(100vw - 28px)',
+      autoFocus: false,
+      data: { receipt: expense.receipt },
+    });
   }
 
   protected totalPages(): number {

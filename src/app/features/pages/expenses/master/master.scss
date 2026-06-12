@@ -195,6 +195,25 @@
   font-weight: 800;
 }
 
+.receipt-link {
+  min-width: 0;
+  padding-inline: 8px;
+  color: var(--mat-sys-primary);
+  font-weight: 700;
+
+  mat-icon {
+    margin-right: 4px;
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+}
+
+.muted-text {
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 12px;
+}
+
 .table-footer {
   justify-content: space-between;
   gap: 16px;
@@ -294,6 +313,14 @@
     margin-top: 10px;
     color: var(--mat-sys-on-surface-variant);
     font-size: 12px;
+  }
+
+  .receipt-link--mobile {
+    justify-content: flex-start;
+    width: fit-content;
+    min-height: 32px;
+    margin-top: 8px;
+    padding-inline: 0;
   }
 
   .expense-card__actions {
