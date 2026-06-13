@@ -66,6 +66,9 @@ app.use('/api/v1', async (req, res, next) => {
       }
     });
 
+    const forwardedFor = req.get('x-forwarded-for');
+    const clientIp = req.ip || req.socket.remoteAddress || '';
+    headers.set('x-forwarded-for', forwardedFor ? `${forwardedFor}, ${clientIp}` : clientIp);
     headers.set('x-forwarded-host', req.get('host') ?? '');
     headers.set('x-forwarded-proto', req.protocol);
 

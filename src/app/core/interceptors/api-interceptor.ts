@@ -17,7 +17,9 @@ export const apiInterceptor: HttpInterceptorFn = (req, next) => {
   const platformId = inject(PLATFORM_ID);
   const injector = inject(Injector);
   const csrf = inject(CsrfService);
-  const headers: Record<string, string> = {};
+  const headers: Record<string, string> = {
+    'ngsw-bypass': 'true',
+  };
 
   if (isPlatformServer(platformId)) {
     const request = injector.get(REQUEST, null, { optional: true });
