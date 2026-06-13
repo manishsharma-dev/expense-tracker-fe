@@ -1,5 +1,7 @@
 import { inject, Injectable } from '@angular/core';
+import { tap } from 'rxjs';
 import { ApiService } from '../api';
+import { CsrfService } from '../csrf';
 import { LoginResponse, OtpRequest, OtpRequestResponse, OtpVerifyRequest } from '../../shared/types/auth.model';
 import { CommonResponse } from '../../shared/types/common.model';
 
@@ -8,6 +10,7 @@ import { CommonResponse } from '../../shared/types/common.model';
 })
 export class AuthService {
   private readonly _api = inject(ApiService);
+  private readonly csrf = inject(CsrfService);
   private readonly deviceStorageKey = 'xpense_device_id';
 
   requestOtp(request: OtpRequest) {
@@ -18,11 +21,15 @@ export class AuthService {
     return this._api.post<CommonResponse<LoginResponse>>('auth/otp/verify', {
       ...request,
       deviceId: request.deviceId ?? this.getDeviceId(),
-    });
+    }).pipe(
+      tap((response) => this.csrf.setToken(response.data.csrfToken))
+    );
   }
 
   logout() {
-    return this._api.post<CommonResponse<null>>('auth/logout', {});
+    return this._api.post<CommonResponse<null>>('auth/logout', {}).pipe(
+      tap(() => this.csrf.clearToken())
+    );
   }
 
   me() {

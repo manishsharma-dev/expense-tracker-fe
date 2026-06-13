@@ -71,11 +71,17 @@ export type Expense = {
   paymentMethod: PaymentMethod;
   country?: Country;
   receipt?: {
+    storageProvider?: 'local' | 's3';
     originalName?: string;
     fileName?: string;
     path?: string;
+    url?: string;
+    viewUrl?: string;
+    bucket?: string;
+    key?: string;
     mimeType?: string;
     size?: number;
+    etag?: string;
   };
   createdAt: string;
   updatedAt: string;
