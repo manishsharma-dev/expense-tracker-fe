@@ -1,0 +1,103 @@
+<section class="debts-page">
+  <header class="page-header">
+    <div>
+      <h1>Debt Management</h1>
+      <p>Track credit cards, loans, borrowed money, EMIs, and repayments.</p>
+    </div>
+    <button mat-flat-button type="button" class="add-button" [disabled]="loading() || saving()" (click)="addDebt()">
+      <mat-icon aria-hidden="true">add_circle</mat-icon>
+      Add Debt
+    </button>
+  </header>
+
+  <section class="summary-grid">
+    <mat-card class="summary-card" appearance="outlined">
+      <mat-card-content>
+        <span>Total debt</span>
+        <strong>{{ summary().totalDebt | currency:'INR':'symbol':'1.0-0' }}</strong>
+        <small>{{ activeDebtCount() }} active accounts</small>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="summary-card" appearance="outlined">
+      <mat-card-content>
+        <span>Credit card debt</span>
+        <strong>{{ summary().creditCardDebt | currency:'INR':'symbol':'1.0-0' }}</strong>
+        <small>Auto-updates from linked expenses</small>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="summary-card" appearance="outlined">
+      <mat-card-content>
+        <span>Other debt</span>
+        <strong>{{ (summary().totalDebt - summary().creditCardDebt) | currency:'INR':'symbol':'1.0-0' }}</strong>
+        <small>Loans, BNPL, and borrowed money</small>
+      </mat-card-content>
+    </mat-card>
+  </section>
+
+  <mat-card class="accounts-card" appearance="outlined">
+    @if (loading() || saving()) {
+      <app-loader [overlay]="true" [text]="saving() ? 'Saving debt details...' : 'Loading debts...'" />
+    }
+
+    <mat-card-content>
+      <div class="accounts-grid">
+        @for (account of accounts(); track account._id) {
+          <article class="debt-card">
+            <div class="debt-card__top">
+              <span class="debt-icon">
+                <mat-icon aria-hidden="true">{{ typeIcon(account.type) }}</mat-icon>
+              </span>
+              <div>
+                <h2>{{ account.name }}</h2>
+                <p>{{ typeLabel(account.type) }} @if (account.source) { - {{ account.source }} }</p>
+              </div>
+            </div>
+
+            <div class="balance-row">
+              <span>Current balance</span>
+              <strong>{{ account.currentBalance | currency:currencyCode(account):'symbol':'1.0-0' }}</strong>
+            </div>
+
+            @if (account.type === 'credit_card' && account.creditLimit) {
+              <div class="usage-block">
+                <div>
+                  <span>Credit used</span>
+                  <b>{{ creditUsage(account) | number:'1.0-0' }}%</b>
+                </div>
+                <mat-progress-bar mode="determinate" [value]="creditUsage(account)"></mat-progress-bar>
+                <small>Limit {{ account.creditLimit | currency:currencyCode(account):'symbol':'1.0-0' }}</small>
+              </div>
+            }
+
+            @if (dueLabel(account)) {
+              <p class="due-text">{{ dueLabel(account) }}</p>
+            }
+
+            @if (account.paymentMethod) {
+              <p class="link-text">
+                <mat-icon aria-hidden="true">sync_alt</mat-icon>
+                Linked to {{ account.paymentMethod.nickname || account.paymentMethod.name }}
+              </p>
+            }
+
+            <div class="debt-card__footer">
+              <small>Updated {{ updatedLabel(account) }}</small>
+              <button mat-stroked-button type="button" (click)="recordPayment(account)">
+                <mat-icon aria-hidden="true">payments</mat-icon>
+                Pay
+              </button>
+            </div>
+          </article>
+        } @empty {
+          <div class="empty-state">
+            <mat-icon aria-hidden="true">account_balance_wallet</mat-icon>
+            <h2>No debt accounts yet</h2>
+            <p>Add a credit card or loan to start tracking balances and payments.</p>
+          </div>
+        }
+      </div>
+    </mat-card-content>
+  </mat-card>
+</section>

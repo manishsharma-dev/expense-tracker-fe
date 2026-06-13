@@ -1,0 +1,319 @@
+.debts-page {
+  color: var(--mat-sys-on-surface);
+}
+
+.page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 18px;
+  margin-bottom: 24px;
+
+  h1 {
+    margin: 0 0 6px;
+    font-size: clamp(26px, 3vw, 32px);
+    font-weight: 800;
+    line-height: 1.1;
+  }
+
+  p {
+    margin: 0;
+    color: var(--mat-sys-on-surface-variant);
+    font-size: 15px;
+  }
+}
+
+.add-button {
+  flex: 0 0 auto;
+  --mdc-filled-button-container-shape: 8px;
+}
+
+.summary-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.summary-card,
+.accounts-card {
+  --mdc-outlined-card-container-color: var(--mat-sys-surface-container-low, var(--mat-sys-surface));
+  --mdc-outlined-card-outline-color: var(--mat-sys-outline-variant);
+  border-radius: 12px;
+  box-shadow: var(--mat-sys-level1);
+}
+
+.summary-card mat-card-content {
+  display: grid;
+  gap: 6px;
+  padding: 18px;
+
+  span,
+  small {
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  span {
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  strong {
+    font-size: 27px;
+    font-weight: 850;
+  }
+
+  small {
+    font-size: 12px;
+  }
+}
+
+.accounts-card {
+  position: relative;
+  overflow: hidden;
+}
+
+.accounts-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.debt-card {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 10px;
+  background: var(--mat-sys-surface-container-lowest, var(--mat-sys-surface));
+}
+
+.debt-card__top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+
+  h2,
+  p {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  h2 {
+    margin: 0 0 3px;
+    font-size: 17px;
+    font-weight: 850;
+  }
+
+  p {
+    margin: 0;
+    color: var(--mat-sys-on-surface-variant);
+    font-size: 13px;
+  }
+}
+
+.debt-icon {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+}
+
+.balance-row {
+  display: grid;
+  gap: 4px;
+
+  span {
+    color: var(--mat-sys-on-surface-variant);
+    font-size: 12px;
+    font-weight: 700;
+  }
+
+  strong {
+    font-size: 25px;
+    font-weight: 850;
+  }
+}
+
+.usage-block {
+  display: grid;
+  gap: 8px;
+
+  div {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    color: var(--mat-sys-on-surface-variant);
+    font-size: 12px;
+  }
+
+  b {
+    color: var(--mat-sys-on-surface);
+  }
+
+  small {
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+.due-text,
+.link-text {
+  margin: 0;
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 13px;
+}
+
+.link-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  mat-icon {
+    width: 18px;
+    height: 18px;
+    font-size: 18px;
+  }
+}
+
+.debt-card__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: auto;
+
+  small {
+    color: var(--mat-sys-on-surface-variant);
+  }
+}
+
+.empty-state {
+  grid-column: 1 / -1;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 48px 16px;
+  text-align: center;
+  color: var(--mat-sys-on-surface-variant);
+
+  mat-icon {
+    width: 40px;
+    height: 40px;
+    font-size: 40px;
+    color: var(--mat-sys-primary);
+  }
+
+  h2,
+  p {
+    margin: 0;
+  }
+
+  h2 {
+    color: var(--mat-sys-on-surface);
+    font-size: 20px;
+    font-weight: 850;
+  }
+}
+
+::ng-deep .country-autocomplete-panel {
+  max-height: 292px !important;
+  padding: 6px !important;
+}
+
+::ng-deep .country-viewport {
+  width: 100%;
+  height: 260px;
+}
+
+::ng-deep .country-autocomplete-panel .mat-mdc-option {
+  height: 52px;
+  min-height: 52px;
+  padding: 0 10px;
+  border-radius: 6px;
+}
+
+::ng-deep .country-autocomplete-panel .mat-mdc-option:hover,
+::ng-deep .country-autocomplete-panel .mat-mdc-option.mdc-list-item--selected {
+  background: var(--mat-sys-surface-container-high);
+}
+
+::ng-deep .country-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+}
+
+::ng-deep .country-option__symbol {
+  display: grid;
+  place-items: center;
+  flex: 0 0 34px;
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: var(--mat-sys-secondary-container);
+  color: var(--mat-sys-on-secondary-container);
+  font-weight: 800;
+}
+
+::ng-deep .country-option__details {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+::ng-deep .country-option__details strong,
+::ng-deep .country-option__details span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+::ng-deep .country-option__details strong {
+  color: var(--mat-sys-on-surface);
+  font-size: 13px;
+  font-weight: 800;
+  line-height: 1.25;
+}
+
+::ng-deep .country-option__details span {
+  color: var(--mat-sys-on-surface-variant);
+  font-size: 12px;
+  line-height: 1.25;
+}
+
+@media (max-width: 1100px) {
+  .accounts-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 760px) {
+  .page-header {
+    display: grid;
+
+    .add-button {
+      width: 100%;
+    }
+  }
+
+  .summary-grid,
+  .accounts-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .accounts-card {
+    border-right: 0;
+    border-left: 0;
+    border-radius: 0;
+    box-shadow: none;
+  }
+}

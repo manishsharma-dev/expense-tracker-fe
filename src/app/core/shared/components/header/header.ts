@@ -43,6 +43,7 @@ export class Header {
     { label: 'Expenses', route: '/expenses', icon: 'receipt_long' },
     { label: 'Earnings', route: '/earnings', icon: 'trending_up' },
     { label: 'Budget', route: '/budget', icon: 'savings' },
+    { label: 'Debts', route: '/debts', icon: 'account_balance' },
   ];
 
   protected toggleTheme(): void {
