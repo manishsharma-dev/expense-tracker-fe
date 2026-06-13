@@ -36,9 +36,17 @@
     <button class="icon-btn icon-btn--theme" type="button" matTooltip="Toggle theme" (click)="toggleTheme()">
       <mat-icon aria-hidden="true">dark_mode</mat-icon>
     </button>
-    <button class="icon-btn icon-btn--notification" type="button" matTooltip="Notifications" aria-label="Notifications">
+    <button
+      class="icon-btn icon-btn--notification"
+      type="button"
+      matTooltip="Daily expense reminder"
+      aria-label="Daily expense reminder"
+      (click)="openReminderSettings()"
+    >
       <mat-icon aria-hidden="true">notifications_none</mat-icon>
-      <span class="notification-dot" aria-hidden="true"></span>
+      @if (reminderEnabled()) {
+        <span class="notification-dot" aria-hidden="true"></span>
+      }
     </button>
     <button class="avatar-btn" type="button" aria-label="User menu" [matMenuTriggerFor]="userMenu">JD</button>
     <mat-menu #userMenu="matMenu" xPosition="before" panelClass="user-menu-panel">

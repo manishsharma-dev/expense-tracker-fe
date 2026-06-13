@@ -8,8 +8,10 @@ import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { finalize, take } from 'rxjs';
 import { AuthService as AuthApiService } from '../../../services/apis/auth.service';
 import { AuthService as AuthStateService } from '../../../services/auth';
+import { ExpenseReminderService } from '../../../services/expense-reminder';
 import { ThemeService } from '../../../services/theme';
 import { ConfirmDialog } from '../confirm-dialog/confirm-dialog';
+import { ExpenseReminderDialog } from '../expense-reminder-dialog/expense-reminder-dialog';
 import { Loader } from '../loader/loader';
 
 @Component({
@@ -31,6 +33,7 @@ export class Header {
   private readonly themeService = inject(ThemeService);
   private readonly authApiService = inject(AuthApiService);
   private readonly authStateService = inject(AuthStateService);
+  private readonly expenseReminder = inject(ExpenseReminderService);
   private readonly dialog = inject(MatDialog);
   private readonly router = inject(Router);
   protected readonly loggingOut = signal(false);
@@ -44,6 +47,22 @@ export class Header {
 
   protected toggleTheme(): void {
     this.themeService.toggleTheme();
+  }
+
+  protected reminderEnabled(): boolean {
+    return this.expenseReminder.settings().enabled;
+  }
+
+  protected openReminderSettings(): void {
+    this.dialog.open(ExpenseReminderDialog, {
+      width: '430px',
+      maxWidth: 'calc(100vw - 32px)',
+      autoFocus: false,
+      data: {
+        settings: this.expenseReminder.settings(),
+        permission: this.expenseReminder.permissionStatus(),
+      },
+    });
   }
 
   protected logout(): void {
