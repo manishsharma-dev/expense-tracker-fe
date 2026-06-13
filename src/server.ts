@@ -13,6 +13,14 @@ const browserDistFolder = join(import.meta.dirname, '../browser');
 const app = express();
 app.set('trust proxy', true);
 
+const normalizeApiBaseUrl = (url: string) => {
+  const trimmedUrl = url.replace(/\/+$/g, '');
+  return trimmedUrl.endsWith('/api') ? `${trimmedUrl}/v1` : trimmedUrl;
+};
+
+const backendApiBaseUrl = normalizeApiBaseUrl(process.env['BACKEND_API_BASE_URL'] ?? process.env['API_BASE_URL'] ?? 'http://localhost:3000/api/v1');
+const publicApiBaseUrl = process.env['PUBLIC_API_BASE_URL'] ?? '/api/v1';
+
 const trustedProxyHeaders = [
   'x-forwarded-for',
   'x-forwarded-host',
@@ -40,8 +48,54 @@ const angularApp = new AngularNodeAppEngine({
 // ✅ Runtime config endpoint — reads from process.env, never baked into bundle
 app.get('/api/config', (_req, res) => {
   res.json({
-    apiBaseUrl: process.env['API_BASE_URL'] ?? 'http://localhost:3000/api/v1',
+    apiBaseUrl: publicApiBaseUrl,
   });
+});
+
+app.use('/api/v1', async (req, res, next) => {
+  try {
+    const targetUrl = new URL(`${backendApiBaseUrl}${req.url}`);
+    const headers = new Headers();
+
+    Object.entries(req.headers).forEach(([key, value]) => {
+      if (!value || ['host', 'connection', 'content-length'].includes(key.toLowerCase())) return;
+      if (Array.isArray(value)) {
+        value.forEach((item) => headers.append(key, item));
+      } else {
+        headers.set(key, value);
+      }
+    });
+
+    headers.set('x-forwarded-host', req.get('host') ?? '');
+    headers.set('x-forwarded-proto', req.protocol);
+
+    const hasBody = !['GET', 'HEAD'].includes(req.method.toUpperCase());
+    const proxyResponse = await fetch(targetUrl, {
+      method: req.method,
+      headers,
+      body: hasBody ? req as unknown as BodyInit : undefined,
+      duplex: hasBody ? 'half' : undefined,
+    } as RequestInit & { duplex?: 'half' });
+
+    res.status(proxyResponse.status);
+    proxyResponse.headers.forEach((value, key) => {
+      if (['content-encoding', 'set-cookie', 'transfer-encoding'].includes(key.toLowerCase())) return;
+      res.setHeader(key, value);
+    });
+
+    const setCookie = (proxyResponse.headers as Headers & { getSetCookie?: () => string[] }).getSetCookie?.();
+    if (setCookie?.length) res.setHeader('set-cookie', setCookie);
+
+    if (!proxyResponse.body) {
+      res.end();
+      return;
+    }
+
+    const body = await proxyResponse.arrayBuffer();
+    res.send(Buffer.from(body));
+  } catch (error) {
+    next(error);
+  }
 });
 
 /**

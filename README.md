@@ -47,7 +47,8 @@ The SSR server exposes runtime config at `/api/config`.
 Set this in `.env` or on the deployment provider:
 
 ```text
-API_BASE_URL=https://expense-tracker-be-woo0.onrender.com/api
+PUBLIC_API_BASE_URL=/api/v1
+BACKEND_API_BASE_URL=https://expense-tracker-be-woo0.onrender.com/api/v1
 ```
 
 ## Build
@@ -72,10 +73,11 @@ Build Command: npm ci && npm run build
 Start Command: npm run serve:ssr:expense-tracker-fe
 ```
 
-Environment variable:
+Environment variables:
 
 ```text
-API_BASE_URL=https://expense-tracker-be-woo0.onrender.com/api
+PUBLIC_API_BASE_URL=/api/v1
+BACKEND_API_BASE_URL=https://expense-tracker-be-woo0.onrender.com/api/v1
 ```
 
 The backend must include this frontend origin in `CORS_ORIGIN` because authentication uses HttpOnly cookies.
