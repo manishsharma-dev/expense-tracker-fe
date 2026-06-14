@@ -15,7 +15,7 @@ import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/ma
 import { MatRadioModule } from '@angular/material/radio';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize, forkJoin, take } from 'rxjs';
 import { ExpenseApiService } from 'app/core/services/apis/expense.service';
 import {
@@ -24,7 +24,7 @@ import {
 } from 'app/core/shared/components/expense-reference-dialog/expense-reference-dialog';
 import { ConfirmDialog } from 'app/core/shared/components/confirm-dialog/confirm-dialog';
 import { Loader } from 'app/core/shared/components/loader/loader';
-import { Category, Country, PaymentMethod, PaymentProvider, SubCategory } from 'app/core/shared/types/expense.model';
+import { Category, Country, Expense, PaymentMethod, PaymentProvider, SubCategory } from 'app/core/shared/types/expense.model';
 import {
   filterCurrencyCountries,
   getCountryCurrencyLabel,
@@ -73,8 +73,10 @@ export class Create implements OnInit, OnDestroy {
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   private readonly sanitizer = inject(DomSanitizer);
   private receiptObjectUrl: string | null = null;
+  private readonly expenseId = this.route.snapshot.paramMap.get('id');
 
   protected readonly categories = signal<Category[]>([]);
   protected readonly subCategories = signal<SubCategory[]>([]);
@@ -84,6 +86,7 @@ export class Create implements OnInit, OnDestroy {
   protected readonly countrySearch = new FormControl('', { nonNullable: true });
   protected readonly countrySearchTerm = signal('');
   protected readonly selectedReceipt = signal<File | null>(null);
+  protected readonly currentReceiptName = signal('');
   protected readonly receiptPreviewUrl = signal<string | null>(null);
   protected readonly receiptPreviewSafeUrl = signal<SafeResourceUrl | null>(null);
   protected readonly receiptPreviewType = signal<'image' | 'pdf' | null>(null);
@@ -93,6 +96,7 @@ export class Create implements OnInit, OnDestroy {
   protected readonly referenceActionLoading = signal(false);
   protected readonly loadingText = signal('Loading...');
   protected readonly maxExpenseDate = new Date();
+  protected readonly isEditMode = signal(Boolean(this.expenseId));
 
   protected readonly form = new FormGroup<ExpenseForm>({
     description: new FormControl('', { nonNullable: true, validators: [Validators.required, Validators.maxLength(200)] }),
@@ -116,6 +120,7 @@ export class Create implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadReferences();
+    if (this.expenseId) this.loadExpenseForEdit(this.expenseId);
     this.form.controls.category.valueChanges.subscribe(() => {
       this.selectedCategory.set(this.form.controls.category.value);
       this.form.controls.subCategory.setValue('');
@@ -400,16 +405,35 @@ export class Create implements OnInit, OnDestroy {
     const payload = this.buildExpensePayload();
     this.loadingText.set('Saving expense...');
     this.saving.set(true);
-    this.expenseApi.createExpense(payload).pipe(
+    const request = this.expenseId
+      ? this.expenseApi.updateExpense(this.expenseId, payload)
+      : this.expenseApi.createExpense(payload);
+
+    request.pipe(
       take(1),
       finalize(() => this.saving.set(false))
     ).subscribe({
       next: () => {
-        this.snackBar.open('Expense added', 'Close', { duration: 2500 });
+        this.snackBar.open(this.expenseId ? 'Expense updated' : 'Expense added', 'Close', { duration: 2500 });
         this.router.navigate(['/expenses']);
       },
       error: () => {
-        this.snackBar.open('Could not add expense', 'Close', { duration: 2500 });
+        this.snackBar.open(this.expenseId ? 'Could not update expense' : 'Could not add expense', 'Close', { duration: 2500 });
+      },
+    });
+  }
+
+  private loadExpenseForEdit(expenseId: string): void {
+    this.loadingText.set('Loading expense...');
+    this.loadingReferences.set(true);
+    this.expenseApi.getExpense(expenseId).pipe(
+      take(1),
+      finalize(() => this.loadingReferences.set(false))
+    ).subscribe({
+      next: (response) => this.patchExpenseForm(response.data.expense),
+      error: () => {
+        this.snackBar.open('Could not load expense', 'Close', { duration: 2500 });
+        this.router.navigate(['/expenses']);
       },
     });
   }
@@ -461,10 +485,30 @@ export class Create implements OnInit, OnDestroy {
     formData.append('category', raw.category);
     formData.append('paymentMethod', raw.paymentMethod);
     formData.append('country', raw.country);
-    if (raw.subCategory) formData.append('subCategory', raw.subCategory);
-    if (raw.notes) formData.append('notes', raw.notes);
+    if (raw.subCategory || this.expenseId) formData.append('subCategory', raw.subCategory);
+    if (raw.notes || this.expenseId) formData.append('notes', raw.notes);
     if (this.selectedReceipt()) formData.append('receipt', this.selectedReceipt() as File);
     return formData;
+  }
+
+  private patchExpenseForm(expense: Expense): void {
+    const date = new Date(expense.date);
+    this.form.controls.description.setValue(expense.description ?? '');
+    this.form.controls.amount.setValue(expense.amount);
+    this.form.controls.date.setValue(Number.isNaN(date.getTime()) ? this.maxExpenseDate : date);
+    this.form.controls.country.setValue(expense.country?._id ?? '');
+    this.form.controls.category.setValue(expense.category?._id ?? '');
+    this.selectedCategory.set(expense.category?._id ?? '');
+    this.form.controls.subCategory.setValue(expense.subCategory?._id ?? '');
+    this.form.controls.paymentMethod.setValue(expense.paymentMethod?._id ?? '');
+    this.form.controls.notes.setValue(expense.notes ?? '');
+    this.currentReceiptName.set(expense.receipt?.originalName ?? '');
+
+    if (expense.country) {
+      const countryLabel = getCountryCurrencyLabel(expense.country);
+      this.countrySearch.setValue(countryLabel, { emitEvent: false });
+      this.countrySearchTerm.set(countryLabel);
+    }
   }
 
   private getCategoryId(category: string | Category): string {

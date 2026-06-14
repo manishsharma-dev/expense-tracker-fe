@@ -30,8 +30,8 @@ export const routes: Routes = [
           },
           {
             path: ':id',
-            loadComponent: () => import('./features/pages/expenses/detail/detail')
-              .then(m => m.Detail),
+            loadComponent: () => import('./features/pages/expenses/create/create')
+              .then(m => m.Create),
           }
         ]
       },

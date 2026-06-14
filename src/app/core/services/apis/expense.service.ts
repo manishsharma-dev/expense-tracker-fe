@@ -91,4 +91,16 @@ export class ExpenseApiService {
   createExpense(expense: FormData) {
     return this.api.post<CommonResponse<ExpenseResponse>>('expenses', expense);
   }
+
+  getExpense(expenseId: string) {
+    return this.api.get<CommonResponse<ExpenseResponse>>(`expenses/${expenseId}`);
+  }
+
+  updateExpense(expenseId: string, expense: FormData) {
+    return this.api.put<CommonResponse<ExpenseResponse>>(`expenses/${expenseId}`, expense);
+  }
+
+  deleteExpense(expenseId: string) {
+    return this.api.delete<CommonResponse<null>>(`expenses/${expenseId}`);
+  }
 }

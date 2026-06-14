@@ -48,8 +48,8 @@
   </mat-card>
 
   <mat-card class="expenses-table-card" appearance="outlined">
-    @if (loading()) {
-      <app-loader [overlay]="true" text="Loading expenses..." />
+    @if (loading() || deleting()) {
+      <app-loader [overlay]="true" [text]="deleting() ? 'Deleting expense...' : 'Loading expenses...'" />
     }
     <mat-card-content>
       <table mat-table [dataSource]="expenses()" matSort matSortActive="date" matSortDirection="desc" class="expenses-table">
@@ -121,7 +121,7 @@
             <a mat-icon-button [routerLink]="['/expenses', expense._id]" [attr.aria-label]="'Edit ' + expense.description">
               <mat-icon aria-hidden="true">edit</mat-icon>
             </a>
-            <button mat-icon-button type="button" [attr.aria-label]="'Delete ' + expense.description">
+            <button mat-icon-button type="button" [attr.aria-label]="'Delete ' + expense.description" (click)="deleteExpense(expense)">
               <mat-icon aria-hidden="true">delete</mat-icon>
             </button>
           </td>
@@ -177,7 +177,7 @@
             <a mat-icon-button [routerLink]="['/expenses', expense._id]" [attr.aria-label]="'Edit ' + expense.description">
               <mat-icon aria-hidden="true">edit</mat-icon>
             </a>
-            <button mat-icon-button type="button" [attr.aria-label]="'Delete ' + expense.description">
+            <button mat-icon-button type="button" [attr.aria-label]="'Delete ' + expense.description" (click)="deleteExpense(expense)">
               <mat-icon aria-hidden="true">delete</mat-icon>
             </button>
           </div>

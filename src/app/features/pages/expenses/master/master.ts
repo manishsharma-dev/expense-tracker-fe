@@ -11,10 +11,12 @@ import { MatInputModule } from '@angular/material/input';
 import { MatPaginator, MatPaginatorModule } from '@angular/material/paginator';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSort, MatSortModule } from '@angular/material/sort';
+import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatTableModule } from '@angular/material/table';
 import { RouterLink } from '@angular/router';
 import { debounceTime, distinctUntilChanged, EMPTY, finalize, forkJoin, merge, startWith, take } from 'rxjs';
 import { ExpenseApiService } from 'app/core/services/apis/expense.service';
+import { ConfirmDialog } from 'app/core/shared/components/confirm-dialog/confirm-dialog';
 import { Loader } from 'app/core/shared/components/loader/loader';
 import { Category, Expense, PaymentMethod } from 'app/core/shared/types/expense.model';
 import { ReceiptPreviewDialog } from './receipt-preview-dialog';
@@ -35,6 +37,7 @@ import { ReceiptPreviewDialog } from './receipt-preview-dialog';
     MatPaginatorModule,
     MatSelectModule,
     MatSortModule,
+    MatSnackBarModule,
     MatTableModule,
     Loader,
   ],
@@ -49,6 +52,7 @@ export class Master implements OnInit, AfterViewInit {
   private readonly expenseApi = inject(ExpenseApiService);
   private readonly datePipe = inject(DatePipe);
   private readonly dialog = inject(MatDialog);
+  private readonly snackBar = inject(MatSnackBar);
 
   protected readonly displayedColumns = [
     'select',
@@ -64,6 +68,7 @@ export class Master implements OnInit, AfterViewInit {
   protected readonly expenses = signal<Expense[]>([]);
   protected readonly totalExpenses = signal(0);
   protected readonly loading = signal(false);
+  protected readonly deleting = signal(false);
   protected readonly referencesLoading = signal(false);
   protected readonly categories = signal<Category[]>([]);
   protected readonly paymentMethods = signal<PaymentMethod[]>([]);
@@ -149,6 +154,37 @@ export class Master implements OnInit, AfterViewInit {
       maxWidth: 'calc(100vw - 28px)',
       autoFocus: false,
       data: { receipt: expense.receipt },
+    });
+  }
+
+  protected deleteExpense(expense: Expense): void {
+    this.dialog.open(ConfirmDialog, {
+      width: '420px',
+      maxWidth: 'calc(100vw - 32px)',
+      autoFocus: false,
+      data: {
+        title: 'Delete Expense',
+        message: `Delete "${expense.description}"? This action cannot be undone.`,
+        cancelText: 'Cancel',
+        confirmText: 'Delete',
+        confirmIcon: 'delete',
+      },
+    }).afterClosed().pipe(take(1)).subscribe((confirmed) => {
+      if (!confirmed) return;
+
+      this.deleting.set(true);
+      this.expenseApi.deleteExpense(expense._id).pipe(
+        take(1),
+        finalize(() => this.deleting.set(false))
+      ).subscribe({
+        next: () => {
+          this.snackBar.open('Expense deleted', 'Close', { duration: 2500 });
+          this.loadExpenses();
+        },
+        error: (error) => {
+          this.snackBar.open(error?.error?.message ?? 'Could not delete expense', 'Close', { duration: 3000 });
+        },
+      });
     });
   }
 

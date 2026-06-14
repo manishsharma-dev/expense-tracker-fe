@@ -110,5 +110,5 @@ export type ExpenseListResponse = {
 };
 
 export type ExpenseResponse = {
-  expense: unknown;
+  expense: Expense;
 };

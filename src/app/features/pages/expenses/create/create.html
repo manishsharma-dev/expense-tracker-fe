@@ -4,8 +4,8 @@
       <mat-icon aria-hidden="true">arrow_back</mat-icon>
     </a>
     <div>
-      <h1>Add New Expense</h1>
-      <p>Fill in the details to record a new expense</p>
+      <h1>{{ isEditMode() ? 'Edit Expense' : 'Add New Expense' }}</h1>
+      <p>{{ isEditMode() ? 'Update the details of this expense' : 'Fill in the details to record a new expense' }}</p>
     </div>
   </header>
 
@@ -188,6 +188,8 @@
             <strong>Upload a receipt or screenshot</strong>
             @if (selectedReceipt()) {
               <span>{{ selectedReceipt()?.name }}</span>
+            } @else if (currentReceiptName()) {
+              <span>Current file: {{ currentReceiptName() }}</span>
             } @else {
               <span>Drag & drop here or browse files</span>
             }
@@ -239,8 +241,8 @@
           <a mat-button routerLink="/expenses">Cancel</a>
           <button mat-button type="button">Save as Draft</button>
           <button mat-flat-button type="submit" [disabled]="loadingReferences() || referenceActionLoading() || saving()">
-            <mat-icon aria-hidden="true">add_circle</mat-icon>
-            Add Expense
+            <mat-icon aria-hidden="true">{{ isEditMode() ? 'save' : 'add_circle' }}</mat-icon>
+            {{ isEditMode() ? 'Update Expense' : 'Add Expense' }}
           </button>
         </div>
       </form>
