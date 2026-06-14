@@ -4,7 +4,7 @@ import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { provideServiceWorker } from '@angular/service-worker';
-import { MAT_DATE_LOCALE } from '@angular/material/core';
+import { MAT_DATE_LOCALE, provideNativeDateAdapter } from '@angular/material/core';
 import { routes } from './app.routes';
 import { apiInterceptor } from './core/interceptors/api-interceptor';
 import { HttpClient } from '@angular/common/http';
@@ -47,6 +47,7 @@ export const appConfig: ApplicationConfig = {
       provide: MAT_DATE_LOCALE,
       useFactory: getDateLocale,
     },
+    provideNativeDateAdapter(),
     provideAppInitializer(() => loadConfig(inject(HttpClient), inject(Config))),
   ],
 };

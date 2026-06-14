@@ -70,3 +70,8 @@ border-color .35s ease;
   pointer-events: auto;
   opacity: 0;
 }
+
+.cdk-overlay-pane:has(.debt-payment-datepicker-panel),
+.cdk-overlay-pane:has(mat-datepicker-content) {
+  z-index: 1100;
+}

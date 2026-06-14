@@ -5,6 +5,8 @@ import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angula
 import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
+import { MatNativeDateModule } from '@angular/material/core';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MAT_DIALOG_DATA, MatDialog, MatDialogModule, MatDialogRef } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
@@ -448,10 +450,12 @@ class DebtAccountDialog {
     CommonModule,
     ReactiveFormsModule,
     MatButtonModule,
+    MatDatepickerModule,
     MatDialogModule,
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
+    MatNativeDateModule,
   ],
   template: `
     <h2 mat-dialog-title>Record Payment</h2>
@@ -469,10 +473,20 @@ class DebtAccountDialog {
           <mat-label>Date</mat-label>
           <input
             matInput
-            type="date"
             formControlName="date"
-            [max]="todayIso"
+            [matDatepicker]="paymentDatePicker"
+            [max]="today"
+            readonly
+            (click)="paymentDatePicker.open()"
+            (focus)="paymentDatePicker.open()"
           />
+          <mat-datepicker-toggle matIconSuffix [for]="paymentDatePicker"></mat-datepicker-toggle>
+          <mat-datepicker #paymentDatePicker panelClass="debt-payment-datepicker-panel"></mat-datepicker>
+          @if (form.controls.date.hasError('required')) {
+            <mat-error>Payment date is required</mat-error>
+          } @else if (form.controls.date.hasError('matDatepickerMax')) {
+            <mat-error>Payment date cannot be in the future</mat-error>
+          }
         </mat-form-field>
 
         <mat-form-field appearance="outline">
@@ -500,10 +514,10 @@ class DebtAccountDialog {
   `],
 })
 class DebtPaymentDialog {
-  protected readonly todayIso = formatDateOnly(new Date());
+  protected readonly today = new Date();
   protected readonly form = new FormGroup({
     amount: new FormControl<number | null>(null, [Validators.required, Validators.min(0.01)]),
-    date: new FormControl(this.todayIso, { nonNullable: true, validators: [Validators.required] }),
+    date: new FormControl<Date | null>(this.today, [Validators.required]),
     description: new FormControl('', { nonNullable: true }),
   });
 
@@ -521,7 +535,7 @@ class DebtPaymentDialog {
     const raw = this.form.getRawValue();
     this.dialogRef.close({
       amount: Number(raw.amount),
-      date: raw.date,
+      date: formatDateOnly(raw.date ?? new Date()),
       description: raw.description.trim() || undefined,
     } satisfies DebtTransactionPayload);
   }
