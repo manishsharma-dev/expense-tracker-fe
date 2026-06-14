@@ -4,6 +4,7 @@ import { provideRouter, withComponentInputBinding } from '@angular/router';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import { provideHttpClient, withFetch, withInterceptors } from '@angular/common/http';
 import { provideServiceWorker } from '@angular/service-worker';
+import { MAT_DATE_LOCALE } from '@angular/material/core';
 import { routes } from './app.routes';
 import { apiInterceptor } from './core/interceptors/api-interceptor';
 import { HttpClient } from '@angular/common/http';
@@ -21,6 +22,14 @@ function loadConfig(http: HttpClient, config: Config) {
     });
 }
 
+function getDateLocale(): string {
+  if (typeof navigator !== 'undefined') {
+    return navigator.languages?.[0] || navigator.language || 'en-IN';
+  }
+
+  return 'en-IN';
+}
+
 export const appConfig: ApplicationConfig = {
   providers: [
     //provideZoneChangeDetection({ eventCoalescing: true }),
@@ -34,6 +43,10 @@ export const appConfig: ApplicationConfig = {
       enabled: !isDevMode(),
       registrationStrategy: 'registerWhenStable:30000',
     }),
+    {
+      provide: MAT_DATE_LOCALE,
+      useFactory: getDateLocale,
+    },
     provideAppInitializer(() => loadConfig(inject(HttpClient), inject(Config))),
   ],
 };

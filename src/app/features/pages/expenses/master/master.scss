@@ -28,6 +28,45 @@
   --mdc-filled-button-container-shape: 8px;
 }
 
+.summary-strip {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  margin-bottom: 18px;
+}
+
+.summary-card {
+  --mdc-outlined-card-container-color: var(--mat-sys-surface-container-low, var(--mat-sys-surface));
+  --mdc-outlined-card-outline-color: var(--mat-sys-outline-variant);
+  border-radius: 12px;
+  box-shadow: var(--mat-sys-level1);
+
+  mat-card-content {
+    display: grid;
+    gap: 6px;
+    padding: 18px;
+  }
+
+  span,
+  small {
+    color: var(--mat-sys-on-surface-variant);
+  }
+
+  span {
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  strong {
+    font-size: 28px;
+    font-weight: 850;
+  }
+
+  small {
+    font-size: 12px;
+  }
+}
+
 .filters-card,
 .expenses-table-card,
 .expense-card {
@@ -44,7 +83,7 @@
 
   mat-card-content {
     display: grid;
-    grid-template-columns: minmax(240px, 1fr) repeat(2, minmax(150px, 180px)) auto;
+    grid-template-columns: minmax(220px, 1fr) repeat(4, minmax(140px, 170px)) auto;
     gap: 12px;
     padding: 18px;
     align-items: center;
@@ -255,11 +294,17 @@
     width: 100%;
   }
 
+  .summary-strip {
+    grid-template-columns: 1fr;
+    gap: 12px;
+    margin-bottom: 16px;
+  }
+
   .filters-card {
     margin-bottom: 16px;
 
     mat-card-content {
-      grid-template-columns: repeat(3, minmax(120px, 1fr));
+      grid-template-columns: repeat(5, minmax(128px, 1fr));
       gap: 10px;
       overflow-x: auto;
       padding: 12px;
@@ -355,7 +400,7 @@
 
 @media (max-width: 420px) {
   .filters-card mat-card-content {
-    grid-template-columns: repeat(3, minmax(104px, 1fr));
+    grid-template-columns: repeat(5, minmax(116px, 1fr));
   }
 
   .expense-card mat-card-content {

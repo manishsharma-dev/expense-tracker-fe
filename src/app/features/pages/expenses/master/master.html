@@ -10,6 +10,24 @@
     </a>
   </header>
 
+  <section class="summary-strip">
+    <mat-card class="summary-card" appearance="outlined">
+      <mat-card-content>
+        <span>Total expense</span>
+        <strong>{{ totalExpenseAmount() | currency:'INR':'symbol':'1.0-0' }}</strong>
+        <small>{{ selectedRangeLabel() }}</small>
+      </mat-card-content>
+    </mat-card>
+
+    <mat-card class="summary-card" appearance="outlined">
+      <mat-card-content>
+        <span>Transactions</span>
+        <strong>{{ totalExpenses() }}</strong>
+        <small>Matching current filters</small>
+      </mat-card-content>
+    </mat-card>
+  </section>
+
   <mat-card class="filters-card" appearance="outlined">
     @if (referencesLoading()) {
       <app-loader [overlay]="true" text="Loading filters..." [diameter]="28" />
@@ -40,6 +58,39 @@
         </mat-select>
       </mat-form-field>
 
+      <mat-form-field appearance="outline">
+        <mat-label>From</mat-label>
+        <input
+          matInput
+          [matDatepicker]="startPicker"
+          [formControl]="startDateControl"
+          [max]="endDateControl.value"
+          readonly
+        />
+        <mat-datepicker-toggle matIconSuffix [for]="startPicker"></mat-datepicker-toggle>
+        <mat-datepicker #startPicker></mat-datepicker>
+        @if (hasInvalidDateRange()) {
+          <mat-error>From date must be before To date</mat-error>
+        }
+      </mat-form-field>
+
+      <mat-form-field appearance="outline">
+        <mat-label>To</mat-label>
+        <input
+          matInput
+          [matDatepicker]="endPicker"
+          [formControl]="endDateControl"
+          [min]="startDateControl.value"
+          [max]="maxDate"
+          readonly
+        />
+        <mat-datepicker-toggle matIconSuffix [for]="endPicker"></mat-datepicker-toggle>
+        <mat-datepicker #endPicker></mat-datepicker>
+        @if (hasInvalidDateRange()) {
+          <mat-error>To date must be after From date</mat-error>
+        }
+      </mat-form-field>
+
       <button mat-stroked-button class="reset-button" type="button" (click)="resetFilters()">
         <mat-icon aria-hidden="true">filter_alt_off</mat-icon>
         Reset
@@ -53,15 +104,6 @@
     }
     <mat-card-content>
       <table mat-table [dataSource]="expenses()" matSort matSortActive="date" matSortDirection="desc" class="expenses-table">
-        <ng-container matColumnDef="select">
-          <th mat-header-cell *matHeaderCellDef>
-            <mat-checkbox aria-label="Select all expenses"></mat-checkbox>
-          </th>
-          <td mat-cell *matCellDef="let expense">
-            <mat-checkbox [attr.aria-label]="'Select ' + expense.description"></mat-checkbox>
-          </td>
-        </ng-container>
-
         <ng-container matColumnDef="date">
           <th mat-header-cell *matHeaderCellDef mat-sort-header="date">Date</th>
           <td mat-cell *matCellDef="let expense">{{ formatDate(expense.date) }}</td>

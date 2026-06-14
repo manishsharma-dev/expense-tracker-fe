@@ -97,6 +97,8 @@ export type ExpenseListQuery = {
   subCategory?: string;
   paymentMethod?: string;
   country?: string;
+  startDate?: string;
+  endDate?: string;
 };
 
 export type ExpenseListResponse = {
@@ -106,6 +108,9 @@ export type ExpenseListResponse = {
     limit: number;
     total: number;
     totalPages: number;
+  };
+  summary?: {
+    totalAmount: number;
   };
 };
 

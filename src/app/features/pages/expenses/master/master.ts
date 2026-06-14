@@ -3,7 +3,8 @@ import { AfterViewInit, Component, inject, OnInit, signal, ViewChild } from '@an
 import { FormControl, ReactiveFormsModule } from '@angular/forms';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
-import { MatCheckboxModule } from '@angular/material/checkbox';
+import { MatNativeDateModule } from '@angular/material/core';
+import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatDialog, MatDialogModule } from '@angular/material/dialog';
 import { MatFormFieldModule } from '@angular/material/form-field';
 import { MatIconModule } from '@angular/material/icon';
@@ -19,6 +20,7 @@ import { ExpenseApiService } from 'app/core/services/apis/expense.service';
 import { ConfirmDialog } from 'app/core/shared/components/confirm-dialog/confirm-dialog';
 import { Loader } from 'app/core/shared/components/loader/loader';
 import { Category, Expense, PaymentMethod } from 'app/core/shared/types/expense.model';
+import { formatDateOnly } from 'app/core/shared/utils/date';
 import { ReceiptPreviewDialog } from './receipt-preview-dialog';
 
 @Component({
@@ -29,11 +31,12 @@ import { ReceiptPreviewDialog } from './receipt-preview-dialog';
     ReactiveFormsModule,
     MatButtonModule,
     MatCardModule,
-    MatCheckboxModule,
+    MatDatepickerModule,
     MatDialogModule,
     MatFormFieldModule,
     MatIconModule,
     MatInputModule,
+    MatNativeDateModule,
     MatPaginatorModule,
     MatSelectModule,
     MatSortModule,
@@ -55,7 +58,6 @@ export class Master implements OnInit, AfterViewInit {
   private readonly snackBar = inject(MatSnackBar);
 
   protected readonly displayedColumns = [
-    'select',
     'date',
     'description',
     'category',
@@ -67,6 +69,7 @@ export class Master implements OnInit, AfterViewInit {
 
   protected readonly expenses = signal<Expense[]>([]);
   protected readonly totalExpenses = signal(0);
+  protected readonly totalExpenseAmount = signal(0);
   protected readonly loading = signal(false);
   protected readonly deleting = signal(false);
   protected readonly referencesLoading = signal(false);
@@ -76,6 +79,9 @@ export class Master implements OnInit, AfterViewInit {
   protected readonly searchControl = new FormControl('', { nonNullable: true });
   protected readonly categoryControl = new FormControl('', { nonNullable: true });
   protected readonly paymentMethodControl = new FormControl('', { nonNullable: true });
+  protected readonly startDateControl = new FormControl<Date>(this.currentMonthStart(), { nonNullable: true });
+  protected readonly endDateControl = new FormControl<Date>(new Date(), { nonNullable: true });
+  protected readonly maxDate = new Date();
 
   ngOnInit(): void {
     this.loadReferences();
@@ -91,7 +97,9 @@ export class Master implements OnInit, AfterViewInit {
     merge(
       this.searchControl.valueChanges.pipe(debounceTime(300), distinctUntilChanged()),
       this.categoryControl.valueChanges,
-      this.paymentMethodControl.valueChanges
+      this.paymentMethodControl.valueChanges,
+      this.startDateControl.valueChanges,
+      this.endDateControl.valueChanges
     ).subscribe(() => {
       if (this.paginator) this.paginator.pageIndex = 0;
     });
@@ -100,6 +108,8 @@ export class Master implements OnInit, AfterViewInit {
       this.searchControl.valueChanges.pipe(debounceTime(1000), distinctUntilChanged()),
       this.categoryControl.valueChanges,
       this.paymentMethodControl.valueChanges,
+      this.startDateControl.valueChanges,
+      this.endDateControl.valueChanges,
       sortChange$,
       paginatorPage$
     ).pipe(startWith(null)).subscribe(() => {
@@ -111,8 +121,18 @@ export class Master implements OnInit, AfterViewInit {
     this.searchControl.setValue('', { emitEvent: false });
     this.categoryControl.setValue('', { emitEvent: false });
     this.paymentMethodControl.setValue('', { emitEvent: false });
+    this.startDateControl.setValue(this.currentMonthStart(), { emitEvent: false });
+    this.endDateControl.setValue(this.currentMonthEnd(), { emitEvent: false });
     if (this.paginator) this.paginator.pageIndex = 0;
     this.loadExpenses();
+  }
+
+  protected selectedRangeLabel(): string {
+    return `${formatDateOnly(this.startDateControl.value)} to ${formatDateOnly(this.endDateControl.value)}`;
+  }
+
+  protected hasInvalidDateRange(): boolean {
+    return this.startDateControl.value > this.endDateControl.value;
   }
 
   protected onMobilePage(direction: 'previous' | 'next'): void {
@@ -218,6 +238,13 @@ export class Master implements OnInit, AfterViewInit {
   }
 
   private loadExpenses(): void {
+    if (this.hasInvalidDateRange()) {
+      this.expenses.set([]);
+      this.totalExpenses.set(0);
+      this.totalExpenseAmount.set(0);
+      return;
+    }
+
     const page = (this.paginator?.pageIndex ?? 0) + 1;
     const limit = this.paginator?.pageSize ?? 10;
     const sort = this.currentSort();
@@ -231,6 +258,8 @@ export class Master implements OnInit, AfterViewInit {
       sortOrder: sort.sortOrder,
       category: this.categoryControl.value,
       paymentMethod: this.paymentMethodControl.value,
+      startDate: formatDateOnly(this.startDateControl.value),
+      endDate: formatDateOnly(this.endDateControl.value),
     }).pipe(
       take(1),
       finalize(() => this.loading.set(false))
@@ -238,10 +267,12 @@ export class Master implements OnInit, AfterViewInit {
       next: (response) => {
         this.expenses.set(response.data.expenses);
         this.totalExpenses.set(response.data.pagination.total);
+        this.totalExpenseAmount.set(response.data.summary?.totalAmount ?? 0);
       },
       error: () => {
         this.expenses.set([]);
         this.totalExpenses.set(0);
+        this.totalExpenseAmount.set(0);
       },
     });
   }
@@ -253,5 +284,15 @@ export class Master implements OnInit, AfterViewInit {
       sortBy: active,
       sortOrder: direction === 'asc' ? 'asc' : 'desc',
     };
+  }
+
+  private currentMonthStart(): Date {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth(), 1);
+  }
+
+  private currentMonthEnd(): Date {
+    const now = new Date();
+    return new Date(now.getFullYear(), now.getMonth() + 1, 0);
   }
 }
