@@ -72,7 +72,7 @@
           @for (category of categories; track category.name) {
             <div class="category-list__item">
               <span class="category-list__name">
-                <span class="category-list__dot" [style.background]="'var(' + category.colorVar + ')'"></span>
+                <span class="category-list__dot" [style.background]="category.color"></span>
                 {{ category.name }}
               </span>
               <strong>{{ category.amount }}</strong>

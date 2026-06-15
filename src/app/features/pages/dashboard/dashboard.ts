@@ -20,6 +20,7 @@ import { finalize, take } from 'rxjs';
 import { DashboardApiService } from 'app/core/services/apis/dashboard.service';
 import { Loader } from 'app/core/shared/components/loader/loader';
 import { DashboardData } from 'app/core/shared/types/dashboard.model';
+import { getCategoryColorValue } from 'app/core/shared/utils/category-color';
 import type { Chart, ChartConfiguration } from 'chart.js';
 
 type StatCard = {
@@ -80,7 +81,7 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
   protected currencyCode = 'INR';
   protected stats: StatCard[] = [];
   protected monthlySpend: Array<{ month: string; value: number }> = [];
-  protected categories: Array<{ name: string; amount: string; value: number; colorVar: string }> = [];
+  protected categories: Array<{ name: string; amount: string; value: number; color: string }> = [];
   protected transactions: Transaction[] = [];
 
   ngOnInit(): void {
@@ -131,7 +132,7 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
       name: category.name,
       amount: this.formatCurrency(category.amount),
       value: category.value,
-      colorVar: this.getCategoryColorVar(category.color),
+      color: getCategoryColorValue(category.color),
     }));
     this.transactions = data.recentTransactions.map((transaction) => ({
       date: this.formatShortDate(transaction.date),
@@ -271,7 +272,7 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
           {
             data: hasCategories ? this.categories.map((category) => category.value) : [1],
             backgroundColor: hasCategories
-              ? this.categories.map((category) => styles.getPropertyValue(category.colorVar).trim())
+              ? this.categories.map((category) => this.resolveCssColor(category.color))
               : [styles.getPropertyValue('--mat-sys-outline-variant').trim()],
             borderColor: panelColor,
             borderWidth: 0,
@@ -320,19 +321,10 @@ export class Dashboard implements OnInit, AfterViewInit, OnDestroy {
     return monthlySpend.map((item) => Math.max(8, Math.round((item.value / maxValue) * 100)));
   }
 
-  private getCategoryColorVar(color?: string): string {
-    const colorMap: Record<string, string> = {
-      orange: '--mat-sys-tertiary',
-      amber: '--mat-sys-tertiary',
-      yellow: '--mat-sys-tertiary',
-      teal: '--mat-sys-primary',
-      blue: '--mat-sys-primary',
-      purple: '--mat-sys-secondary',
-      pink: '--mat-sys-error',
-      green: '--mat-sys-inverse-primary',
-      neutral: '--mat-sys-outline',
-    };
+  private resolveCssColor(color: string): string {
+    if (!color.startsWith('var(')) return color;
 
-    return colorMap[color ?? 'neutral'] ?? '--mat-sys-outline';
+    const variableName = color.slice(4, -1).trim();
+    return getComputedStyle(document.body).getPropertyValue(variableName).trim() || color;
   }
 }
