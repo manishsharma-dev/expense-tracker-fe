@@ -31,15 +31,19 @@ export const apiInterceptor: HttpInterceptorFn = (req, next) => {
     && unsafeMethods.has(req.method.toUpperCase())
     && !csrfExemptPaths.some((path) => req.url.includes(path));
 
+  const requestWithBypass = req.clone({
+    params: req.params.has('ngsw-bypass') ? req.params : req.params.set('ngsw-bypass', 'true'),
+  });
+
   if (!shouldAttachCsrfToken) {
-    return next(req.clone({
+    return next(requestWithBypass.clone({
       withCredentials: true,
       setHeaders: headers,
     }));
   }
 
   return from(csrf.getToken()).pipe(
-    switchMap((token) => next(req.clone({
+    switchMap((token) => next(requestWithBypass.clone({
       withCredentials: true,
       setHeaders: {
         ...headers,

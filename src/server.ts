@@ -81,10 +81,25 @@ app.use('/api/v1', async (req, res, next) => {
     } as RequestInit & { duplex?: 'half' });
 
     res.status(proxyResponse.status);
+    res.setHeader('Cache-Control', 'no-store');
+    res.setHeader('X-Xpense-Proxy', 'fe-ssr-proxy');
     proxyResponse.headers.forEach((value, key) => {
       if (['content-encoding', 'set-cookie', 'transfer-encoding'].includes(key.toLowerCase())) return;
       res.setHeader(key, value);
     });
+
+    if (proxyResponse.status === 429) {
+      console.warn('FE proxy received 429 from backend', JSON.stringify({
+        method: req.method,
+        originalUrl: req.originalUrl,
+        targetUrl: targetUrl.toString(),
+        clientIp,
+        xForwardedFor: req.get('x-forwarded-for'),
+        backendLimiter: proxyResponse.headers.get('x-ratelimit-limiter'),
+        backend429Source: proxyResponse.headers.get('x-xpense-429-source'),
+        userAgent: req.get('user-agent'),
+      }));
+    }
 
     const setCookie = (proxyResponse.headers as Headers & { getSetCookie?: () => string[] }).getSetCookie?.();
     if (setCookie?.length) res.setHeader('set-cookie', setCookie);
