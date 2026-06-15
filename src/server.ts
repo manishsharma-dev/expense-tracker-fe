@@ -33,6 +33,33 @@ const angularApp = new AngularNodeAppEngine({
   trustProxyHeaders: trustedProxyHeaders,
 });
 
+const retryableProxyStatuses = new Set([429]);
+
+const delay = (ms: number) => new Promise((resolve) => {
+  setTimeout(resolve, ms);
+});
+
+const readRequestBody = async (req: express.Request, hasBody: boolean): Promise<Buffer | undefined> => {
+  if (!hasBody) return undefined;
+
+  const chunks: Buffer[] = [];
+  for await (const chunk of req) {
+    chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk as ArrayBuffer));
+  }
+
+  return Buffer.concat(chunks);
+};
+
+const isUnmarkedBackend429 = (response: Response) => {
+  return response.status === 429
+    && !response.headers.get('x-ratelimit-limiter')
+    && !response.headers.get('x-xpense-429-source');
+};
+
+const shouldRetryBackendResponse = (response: Response) => {
+  return retryableProxyStatuses.has(response.status) && isUnmarkedBackend429(response);
+};
+
 /**
  * Example Express Rest API endpoints can be defined here.
  * Uncomment and define endpoints as necessary.
@@ -73,12 +100,38 @@ app.use('/api/v1', async (req, res, next) => {
     headers.set('x-forwarded-proto', req.protocol);
 
     const hasBody = !['GET', 'HEAD'].includes(req.method.toUpperCase());
-    const proxyResponse = await fetch(targetUrl, {
-      method: req.method,
-      headers,
-      body: hasBody ? req as unknown as BodyInit : undefined,
-      duplex: hasBody ? 'half' : undefined,
-    } as RequestInit & { duplex?: 'half' });
+    const requestBody = await readRequestBody(req, hasBody);
+    const maxAttempts = 3;
+    let proxyResponse: Response | undefined;
+
+    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+      proxyResponse = await fetch(targetUrl, {
+        method: req.method,
+        headers,
+        body: requestBody,
+        duplex: hasBody ? 'half' : undefined,
+      } as RequestInit & { duplex?: 'half' });
+
+      if (!shouldRetryBackendResponse(proxyResponse) || attempt === maxAttempts) break;
+
+      console.warn('FE proxy retrying unmarked backend 429', JSON.stringify({
+        attempt,
+        nextAttempt: attempt + 1,
+        method: req.method,
+        originalUrl: req.originalUrl,
+        targetUrl: targetUrl.toString(),
+        clientIp,
+        xForwardedFor: req.get('x-forwarded-for'),
+        userAgent: req.get('user-agent'),
+      }));
+
+      await proxyResponse.arrayBuffer();
+      await delay(attempt * 2000);
+    }
+
+    if (!proxyResponse) {
+      throw new Error('No proxy response received');
+    }
 
     res.status(proxyResponse.status);
     res.setHeader('Cache-Control', 'no-store');
