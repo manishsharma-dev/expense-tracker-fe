@@ -92,6 +92,17 @@ const getResponseBodyPreview = async (response: Response, maxLength = 500) => {
   }
 };
 
+const headersExcludedFromBackendProxy = new Set([
+  'host',
+  'connection',
+  'content-length',
+  'x-forwarded-for',
+  'x-forwarded-host',
+  'x-forwarded-port',
+  'x-forwarded-proto',
+  'x-forwarded-scheme',
+]);
+
 // RENDER WORKAROUND START
 // Render free instances can occasionally return an edge/platform 429 while a
 // sleeping backend wakes up. Those responses do not include our backend limiter
@@ -217,7 +228,7 @@ app.use('/api/v1', async (req, res, next) => {
     const headers = new Headers();
 
     Object.entries(req.headers).forEach(([key, value]) => {
-      if (!value || ['host', 'connection', 'content-length'].includes(key.toLowerCase())) return;
+      if (!value || headersExcludedFromBackendProxy.has(key.toLowerCase())) return;
       if (Array.isArray(value)) {
         value.forEach((item) => headers.append(key, item));
       } else {
@@ -227,9 +238,10 @@ app.use('/api/v1', async (req, res, next) => {
 
     const forwardedFor = req.get('x-forwarded-for');
     const clientIp = req.ip || req.socket.remoteAddress || '';
-    headers.set('x-forwarded-for', forwardedFor ? `${forwardedFor}, ${clientIp}` : clientIp);
-    headers.set('x-forwarded-host', req.get('host') ?? '');
-    headers.set('x-forwarded-proto', req.protocol);
+    headers.set('x-xpense-client-ip', clientIp);
+    if (forwardedFor) {
+      headers.set('x-xpense-original-forwarded-for', forwardedFor);
+    }
 
     const hasBody = !['GET', 'HEAD'].includes(req.method.toUpperCase());
     const requestBody = await readRequestBody(req, hasBody);
