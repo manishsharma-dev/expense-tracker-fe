@@ -33,11 +33,31 @@ const angularApp = new AngularNodeAppEngine({
   trustProxyHeaders: trustedProxyHeaders,
 });
 
-const retryableProxyStatuses = new Set([429]);
+const backendWarmIntervalMs = 10 * 60 * 1000;
+const enableRenderProxy429Workaround = process.env['ENABLE_RENDER_PROXY_429_WORKAROUND'] !== 'false';
+let lastBackendWarmAt = 0;
 
 const delay = (ms: number) => new Promise((resolve) => {
   setTimeout(resolve, ms);
 });
+
+const fetchWithTimeout = async (url: URL, init: RequestInit, timeoutMs: number) => {
+  const controller = new AbortController();
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    return await fetch(url, {
+      ...init,
+      signal: controller.signal,
+    });
+  } finally {
+    clearTimeout(timeout);
+  }
+};
+
+const isAuthOtpRequest = (req: express.Request) => {
+  return req.method.toUpperCase() === 'POST' && req.path === '/auth/otp/request';
+};
 
 const readRequestBody = async (req: express.Request, hasBody: boolean): Promise<Buffer | undefined> => {
   if (!hasBody) return undefined;
@@ -56,9 +76,119 @@ const isUnmarkedBackend429 = (response: Response) => {
     && !response.headers.get('x-xpense-429-source');
 };
 
-const shouldRetryBackendResponse = (response: Response) => {
-  return retryableProxyStatuses.has(response.status) && isUnmarkedBackend429(response);
+const getProxy429Source = (response: Response) => {
+  const backendSource = response.headers.get('x-xpense-429-source');
+  if (backendSource) return backendSource;
+  if (isUnmarkedBackend429(response)) return 'fe-proxy-unmarked-backend-429';
+  return 'unknown-429-source';
 };
+
+const getResponseBodyPreview = async (response: Response, maxLength = 500) => {
+  try {
+    const body = await response.clone().text();
+    return body.length > maxLength ? `${body.slice(0, maxLength)}...` : body;
+  } catch (error) {
+    return `Unable to read response body: ${error instanceof Error ? error.message : String(error)}`;
+  }
+};
+
+// RENDER WORKAROUND START
+// Render free instances can occasionally return an edge/platform 429 while a
+// sleeping backend wakes up. Those responses do not include our backend limiter
+// headers, so keep this behavior isolated and removable for other cloud hosts.
+const fetchBackendWithRenderProxy429Workaround = async ({
+  req,
+  headers,
+  targetUrl,
+  requestInit,
+  clientIp,
+}: {
+  req: express.Request;
+  headers: Headers;
+  targetUrl: URL;
+  requestInit: RequestInit & { duplex?: 'half' };
+  clientIp: string;
+}) => {
+  if (!enableRenderProxy429Workaround) {
+    return fetch(targetUrl, requestInit);
+  }
+
+  if (isAuthOtpRequest(req) && Date.now() - lastBackendWarmAt >= backendWarmIntervalMs) {
+    const healthUrl = new URL(`${backendApiBaseUrl}/health`);
+    const maxWarmAttempts = 6;
+
+    for (let attempt = 1; attempt <= maxWarmAttempts; attempt += 1) {
+      try {
+        const response = await fetchWithTimeout(healthUrl, {
+          method: 'GET',
+          headers,
+        }, 10000);
+
+        if (response.status !== 429) {
+          lastBackendWarmAt = Date.now();
+          console.log('FE proxy backend warm-up completed', JSON.stringify({
+            attempt,
+            status: response.status,
+            healthUrl: healthUrl.toString(),
+          }));
+          break;
+        }
+
+        console.warn('FE proxy backend warm-up received 429', JSON.stringify({
+          attempt,
+          maxWarmAttempts,
+          status: response.status,
+          healthUrl: healthUrl.toString(),
+          backendLimiter: response.headers.get('x-ratelimit-limiter'),
+          backend429Source: response.headers.get('x-xpense-429-source'),
+          responseBody: await getResponseBodyPreview(response),
+        }));
+      } catch (error) {
+        console.warn('FE proxy backend warm-up failed', JSON.stringify({
+          attempt,
+          maxWarmAttempts,
+          healthUrl: healthUrl.toString(),
+          error: error instanceof Error ? error.message : String(error),
+        }));
+      }
+
+      if (attempt < maxWarmAttempts) {
+        await delay(Math.min(attempt * 3000, 12000));
+      }
+    }
+  }
+
+  const maxAttempts = isAuthOtpRequest(req) ? 6 : 1;
+  let proxyResponse: Response | undefined;
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    proxyResponse = await fetch(targetUrl, requestInit);
+
+    if (!isUnmarkedBackend429(proxyResponse) || attempt === maxAttempts) break;
+
+    console.warn('FE proxy retrying unmarked backend 429', JSON.stringify({
+      attempt,
+      nextAttempt: attempt + 1,
+      method: req.method,
+      originalUrl: req.originalUrl,
+      targetUrl: targetUrl.toString(),
+      clientIp,
+      xForwardedFor: req.get('x-forwarded-for'),
+      userAgent: req.get('user-agent'),
+      responseBody: await getResponseBodyPreview(proxyResponse),
+    }));
+
+    await proxyResponse.arrayBuffer();
+    await delay(Math.min(attempt * 2500, 10000));
+  }
+
+  if (!proxyResponse) {
+    throw new Error('No proxy response received');
+  }
+
+  return proxyResponse;
+};
+// RENDER WORKAROUND END
 
 /**
  * Example Express Rest API endpoints can be defined here.
@@ -80,8 +210,10 @@ app.get('/api/config', (_req, res) => {
 });
 
 app.use('/api/v1', async (req, res, next) => {
+  let targetUrl: URL | undefined;
+
   try {
-    const targetUrl = new URL(`${backendApiBaseUrl}${req.url}`);
+    targetUrl = new URL(`${backendApiBaseUrl}${req.url}`);
     const headers = new Headers();
 
     Object.entries(req.headers).forEach(([key, value]) => {
@@ -101,47 +233,32 @@ app.use('/api/v1', async (req, res, next) => {
 
     const hasBody = !['GET', 'HEAD'].includes(req.method.toUpperCase());
     const requestBody = await readRequestBody(req, hasBody);
-    const maxAttempts = 3;
-    let proxyResponse: Response | undefined;
-
-    for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
-      proxyResponse = await fetch(targetUrl, {
+    const proxyResponse = await fetchBackendWithRenderProxy429Workaround({
+      req,
+      headers,
+      targetUrl,
+      clientIp,
+      requestInit: {
         method: req.method,
         headers,
         body: requestBody,
         duplex: hasBody ? 'half' : undefined,
-      } as RequestInit & { duplex?: 'half' });
-
-      if (!shouldRetryBackendResponse(proxyResponse) || attempt === maxAttempts) break;
-
-      console.warn('FE proxy retrying unmarked backend 429', JSON.stringify({
-        attempt,
-        nextAttempt: attempt + 1,
-        method: req.method,
-        originalUrl: req.originalUrl,
-        targetUrl: targetUrl.toString(),
-        clientIp,
-        xForwardedFor: req.get('x-forwarded-for'),
-        userAgent: req.get('user-agent'),
-      }));
-
-      await proxyResponse.arrayBuffer();
-      await delay(attempt * 2000);
-    }
-
-    if (!proxyResponse) {
-      throw new Error('No proxy response received');
-    }
+      } as RequestInit & { duplex?: 'half' },
+    });
 
     res.status(proxyResponse.status);
     res.setHeader('Cache-Control', 'no-store');
     res.setHeader('X-Xpense-Proxy', 'fe-ssr-proxy');
+    if (proxyResponse.status === 429) {
+      res.setHeader('X-Xpense-429-Source', getProxy429Source(proxyResponse));
+    }
     proxyResponse.headers.forEach((value, key) => {
       if (['content-encoding', 'set-cookie', 'transfer-encoding'].includes(key.toLowerCase())) return;
       res.setHeader(key, value);
     });
 
     if (proxyResponse.status === 429) {
+      const proxy429Source = getProxy429Source(proxyResponse);
       console.warn('FE proxy received 429 from backend', JSON.stringify({
         method: req.method,
         originalUrl: req.originalUrl,
@@ -150,6 +267,8 @@ app.use('/api/v1', async (req, res, next) => {
         xForwardedFor: req.get('x-forwarded-for'),
         backendLimiter: proxyResponse.headers.get('x-ratelimit-limiter'),
         backend429Source: proxyResponse.headers.get('x-xpense-429-source'),
+        proxy429Source,
+        responseBody: await getResponseBodyPreview(proxyResponse),
         userAgent: req.get('user-agent'),
       }));
     }
@@ -165,6 +284,16 @@ app.use('/api/v1', async (req, res, next) => {
     const body = await proxyResponse.arrayBuffer();
     res.send(Buffer.from(body));
   } catch (error) {
+    console.error('FE proxy request failed', JSON.stringify({
+      method: req.method,
+      originalUrl: req.originalUrl,
+      targetUrl: targetUrl?.toString(),
+      clientIp: req.ip || req.socket.remoteAddress || '',
+      xForwardedFor: req.get('x-forwarded-for'),
+      userAgent: req.get('user-agent'),
+      error: error instanceof Error ? error.message : String(error),
+      stack: error instanceof Error ? error.stack : undefined,
+    }));
     next(error);
   }
 });
