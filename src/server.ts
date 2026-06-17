@@ -18,8 +18,9 @@ const normalizeApiBaseUrl = (url: string) => {
   return trimmedUrl.endsWith('/api') ? `${trimmedUrl}/v1` : trimmedUrl;
 };
 
+const isProduction = process.env['NODE_ENV'] === 'production';
 const backendApiBaseUrl = normalizeApiBaseUrl(process.env['BACKEND_API_BASE_URL'] ?? process.env['API_BASE_URL'] ?? 'http://localhost:3000/api/v1');
-const publicApiBaseUrl = process.env['PUBLIC_API_BASE_URL'] ?? '/api/v1';
+const publicApiBaseUrl = process.env['PUBLIC_API_BASE_URL'] ?? (isProduction ? backendApiBaseUrl : '/api/v1');
 
 const trustedProxyHeaders = [
   'x-forwarded-for',
@@ -36,6 +37,13 @@ const angularApp = new AngularNodeAppEngine({
 const backendWarmIntervalMs = 10 * 60 * 1000;
 const enableRenderProxy429Workaround = process.env['ENABLE_RENDER_PROXY_429_WORKAROUND'] === 'true';
 let lastBackendWarmAt = 0;
+
+console.log('FE runtime API config', JSON.stringify({
+  backendApiBaseUrl,
+  publicApiBaseUrl,
+  enableRenderProxy429Workaround,
+  nodeEnv: process.env['NODE_ENV'],
+}));
 
 const delay = (ms: number) => new Promise((resolve) => {
   setTimeout(resolve, ms);
