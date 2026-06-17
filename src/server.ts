@@ -34,7 +34,7 @@ const angularApp = new AngularNodeAppEngine({
 });
 
 const backendWarmIntervalMs = 10 * 60 * 1000;
-const enableRenderProxy429Workaround = process.env['ENABLE_RENDER_PROXY_429_WORKAROUND'] !== 'false';
+const enableRenderProxy429Workaround = process.env['ENABLE_RENDER_PROXY_429_WORKAROUND'] === 'true';
 let lastBackendWarmAt = 0;
 
 const delay = (ms: number) => new Promise((resolve) => {
@@ -104,9 +104,9 @@ const headersExcludedFromBackendProxy = new Set([
 ]);
 
 // RENDER WORKAROUND START
-// Render free instances can occasionally return an edge/platform 429 while a
-// sleeping backend wakes up. Those responses do not include our backend limiter
-// headers, so keep this behavior isolated and removable for other cloud hosts.
+// Render free instances can occasionally return an edge/platform 429 before the
+// backend app sees the request. This is opt-in because repeated warm-up/retry
+// requests can make platform-side throttling worse on some Render services.
 const fetchBackendWithRenderProxy429Workaround = async ({
   req,
   headers,
