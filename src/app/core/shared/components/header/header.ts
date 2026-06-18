@@ -46,6 +46,17 @@ export class Header {
     { label: 'Debts', route: '/debts', icon: 'account_balance' },
   ];
 
+  protected userInitials(): string {
+    const user = this.authStateService.user();
+    const fallback = user?.email || user?.phone || 'U';
+    const name = user?.name?.trim() || fallback;
+    const parts = name.split(/\s+/).filter(Boolean);
+    const initials = parts.length > 1
+      ? `${parts[0][0]}${parts[1][0]}`
+      : name.slice(0, 2);
+    return initials.toUpperCase();
+  }
+
   protected toggleTheme(): void {
     this.themeService.toggleTheme();
   }

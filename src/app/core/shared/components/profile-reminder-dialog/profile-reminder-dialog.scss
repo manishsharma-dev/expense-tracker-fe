@@ -1,0 +1,53 @@
+.profile-reminder {
+  padding-top: 8px;
+}
+
+.profile-reminder__icon {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  margin: 0 24px 8px;
+  border-radius: 12px;
+  background: var(--mat-sys-primary-container);
+  color: var(--mat-sys-on-primary-container);
+
+  mat-icon {
+    font-size: 26px;
+    width: 26px;
+    height: 26px;
+  }
+}
+
+h2 {
+  margin-bottom: 4px;
+  font-weight: 800;
+}
+
+p {
+  margin: 0;
+  color: var(--mat-sys-on-surface-variant);
+  line-height: 1.5;
+}
+
+button[mat-flat-button] {
+  --mdc-filled-button-container-shape: 8px;
+}
+
+@media (max-width: 520px) {
+  mat-dialog-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    padding: 0 24px 20px;
+
+    button {
+      width: 100%;
+      margin: 0;
+    }
+
+    button[mat-flat-button] {
+      order: -1;
+    }
+  }
+}

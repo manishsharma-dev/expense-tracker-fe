@@ -1,0 +1,122 @@
+<section class="profile-page">
+  <header class="page-header">
+    <div>
+      <h1>Profile</h1>
+      <p>Keep your account details up to date.</p>
+    </div>
+  </header>
+
+  <mat-card class="profile-card" appearance="outlined">
+    @if (loading() || saving()) {
+      <app-loader [overlay]="true" [text]="saving() ? 'Saving profile...' : 'Loading profile...'" />
+    }
+
+    <mat-card-content>
+      <form class="profile-form" [formGroup]="form" (ngSubmit)="saveProfile()">
+        <section class="form-section">
+          <h2>Personal Details</h2>
+
+          <mat-form-field appearance="outline" class="full-field">
+            <mat-label>Full name</mat-label>
+            <mat-icon matPrefix aria-hidden="true">person</mat-icon>
+            <input matInput formControlName="name" autocomplete="name" />
+            @if (form.controls.name.hasError('required')) {
+              <mat-error>Name is required</mat-error>
+            } @else if (form.controls.name.hasError('maxlength')) {
+              <mat-error>Name must be 100 characters or less</mat-error>
+            }
+          </mat-form-field>
+
+          <div class="two-column">
+            <mat-form-field appearance="outline">
+              <mat-label>Gender</mat-label>
+              <mat-select formControlName="gender">
+                <mat-option value="female">Female</mat-option>
+                <mat-option value="male">Male</mat-option>
+                <mat-option value="non_binary">Non-binary</mat-option>
+                <mat-option value="other">Other</mat-option>
+                <mat-option value="prefer_not_to_say">Prefer not to say</mat-option>
+              </mat-select>
+              @if (form.controls.gender.hasError('required')) {
+                <mat-error>Gender is required</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Date of birth</mat-label>
+              <input matInput formControlName="dateOfBirth" [matDatepicker]="birthPicker" [max]="maxBirthDate" />
+              <mat-datepicker-toggle matIconSuffix [for]="birthPicker"></mat-datepicker-toggle>
+              <mat-datepicker #birthPicker></mat-datepicker>
+              @if (form.controls.dateOfBirth.hasError('matDatepickerMax')) {
+                <mat-error>Date of birth cannot be in the future</mat-error>
+              }
+            </mat-form-field>
+          </div>
+
+          <mat-form-field appearance="outline" class="full-field">
+            <mat-label>Country of origin</mat-label>
+            <mat-icon matPrefix aria-hidden="true">public</mat-icon>
+            <input
+              matInput
+              [formControl]="countrySearch"
+              [matAutocomplete]="countryAuto"
+              placeholder="Search country"
+              autocomplete="off"
+            />
+            <mat-autocomplete
+              #countryAuto="matAutocomplete"
+              class="country-autocomplete-panel"
+              (optionSelected)="selectCountry($event)"
+            >
+              <cdk-virtual-scroll-viewport itemSize="52" class="country-viewport">
+                <mat-option *cdkVirtualFor="let country of filteredCountries()" [value]="country">
+                  <span class="country-option" [title]="getCountryLabel(country)">
+                    <span class="country-option__symbol">{{ country.emoji || country.iso2 }}</span>
+                    <span class="country-option__details">
+                      <strong>{{ country.name }}</strong>
+                      <span>{{ country.currency?.code || country.iso3 }}</span>
+                    </span>
+                  </span>
+                </mat-option>
+              </cdk-virtual-scroll-viewport>
+            </mat-autocomplete>
+          </mat-form-field>
+        </section>
+
+        <section class="form-section">
+          <h2>Contact</h2>
+
+          <div class="two-column">
+            <mat-form-field appearance="outline">
+              <mat-label>Email</mat-label>
+              <mat-icon matPrefix aria-hidden="true">mail</mat-icon>
+              <input matInput formControlName="email" autocomplete="email" />
+              @if (form.controls.email.hasError('email')) {
+                <mat-error>Enter a valid email</mat-error>
+              } @else if (form.controls.email.hasError('contactRequired')) {
+                <mat-error>Email or mobile number is required</mat-error>
+              }
+            </mat-form-field>
+
+            <mat-form-field appearance="outline">
+              <mat-label>Mobile number</mat-label>
+              <mat-icon matPrefix aria-hidden="true">phone_iphone</mat-icon>
+              <input matInput formControlName="phone" autocomplete="tel" placeholder="+91 98765 43210" />
+              @if (form.controls.phone.hasError('contactRequired')) {
+                <mat-error>Email or mobile number is required</mat-error>
+              }
+            </mat-form-field>
+          </div>
+        </section>
+
+        <div class="form-actions">
+          <button mat-button type="button" (click)="resetProfile()">Reset</button>
+          <button mat-flat-button type="submit" [disabled]="loading() || saving()">
+            <mat-icon aria-hidden="true">save</mat-icon>
+            Save Profile
+          </button>
+        </div>
+      </form>
+    </mat-card-content>
+  </mat-card>
+</section>

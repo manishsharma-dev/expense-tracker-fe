@@ -42,6 +42,7 @@ export type Country = {
   iso2?: string;
   iso3?: string;
   emoji?: string;
+  phoneCode?: string;
   currency?: {
     code?: string;
     name?: string;

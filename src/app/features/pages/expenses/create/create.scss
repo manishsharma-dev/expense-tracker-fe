@@ -171,7 +171,8 @@
 }
 
 :host ::ng-deep .compact-field .mat-mdc-form-field-subscript-wrapper {
-  display: none;
+  min-height: 18px;
+  line-height: 1.2;
 }
 
 .category-grid {
@@ -378,6 +379,13 @@
   font-size: 13px;
 }
 
+.field-error {
+  margin: -2px 0 8px;
+  color: var(--mat-sys-error);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
 .receipt-dropzone {
   position: relative;
   display: grid;
@@ -509,7 +517,7 @@
   gap: 12px;
   padding-top: 4px;
 
-  button:last-child {
+  .submit-action {
     --mdc-filled-button-container-shape: 8px;
   }
 }
@@ -579,19 +587,16 @@
 
   .form-actions {
     display: grid;
+    grid-template-columns: 1fr;
     gap: 10px;
 
-    button,
-    a {
+    button {
       width: 100%;
     }
 
-    button:last-child {
-      order: -3;
-    }
-
-    button:nth-child(2) {
-      order: -2;
+    .submit-action {
+      order: -1;
+      min-height: 44px;
     }
   }
 }

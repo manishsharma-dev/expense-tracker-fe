@@ -16,6 +16,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { finalize, forkJoin, take } from 'rxjs';
 import { EarningApiService } from 'app/core/services/apis/earning.service';
 import { ExpenseApiService } from 'app/core/services/apis/expense.service';
+import { AuthService as AuthStateService } from 'app/core/services/auth';
 import {
   ExpenseReferenceDialog,
   ExpenseReferenceDialogResult,
@@ -26,7 +27,7 @@ import { Country } from 'app/core/shared/types/expense.model';
 import {
   filterCurrencyCountries,
   getCountryCurrencyLabel,
-  getDefaultCurrencyCountry,
+  getPreferredCurrencyCountry,
 } from 'app/core/shared/utils/country-currency';
 import { formatDateOnly } from 'app/core/shared/utils/date';
 
@@ -56,6 +57,7 @@ import { formatDateOnly } from 'app/core/shared/utils/date';
 export class Earnings implements OnInit {
   private readonly earningApi = inject(EarningApiService);
   private readonly expenseApi = inject(ExpenseApiService);
+  private readonly authState = inject(AuthStateService);
   private readonly dialog = inject(MatDialog);
   private readonly snackBar = inject(MatSnackBar);
   private readonly datePipe = inject(DatePipe);
@@ -190,16 +192,16 @@ export class Earnings implements OnInit {
         this.categories.set(categories.data.earningCategories ?? []);
         this.earnings.set(earnings.data.earnings ?? []);
         this.countries.set(loadedCountries);
-        this.setDefaultCountryFromBrowser(loadedCountries);
+        this.setDefaultCurrencyCountry(loadedCountries);
       },
       error: () => this.snackBar.open('Could not load earnings', 'Close', { duration: 2500 }),
     });
   }
 
-  private setDefaultCountryFromBrowser(countries: Country[]): void {
+  private setDefaultCurrencyCountry(countries: Country[]): void {
     if (this.form.controls.country.value || !countries.length) return;
 
-    const country = getDefaultCurrencyCountry(countries);
+    const country = getPreferredCurrencyCountry(countries, this.authState.user()?.country);
     if (!country) return;
 
     const countryLabel = getCountryCurrencyLabel(country);

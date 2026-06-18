@@ -2,7 +2,7 @@ import { inject, Injectable } from '@angular/core';
 import { tap } from 'rxjs';
 import { ApiService } from '../api';
 import { CsrfService } from '../csrf';
-import { LoginResponse, OtpRequest, OtpRequestResponse, OtpVerifyRequest } from '../../shared/types/auth.model';
+import { LoginResponse, OtpRequest, OtpRequestResponse, OtpVerifyRequest, UpdateProfileRequest, UserProfile } from '../../shared/types/auth.model';
 import { CommonResponse } from '../../shared/types/common.model';
 
 @Injectable({
@@ -33,7 +33,15 @@ export class AuthService {
   }
 
   me() {
-    return this._api.get<CommonResponse<{ user: unknown }>>('auth/me');
+    return this._api.get<CommonResponse<{ user: UserProfile }>>('auth/me');
+  }
+
+  updateProfile(request: UpdateProfileRequest) {
+    return this._api.patch<CommonResponse<{ user: UserProfile }>>('users/me', request);
+  }
+
+  remindProfileLater() {
+    return this._api.post<CommonResponse<{ user: UserProfile }>>('users/me/profile-reminder/later', {});
   }
 
   private getDeviceId(): string | undefined {

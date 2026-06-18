@@ -1,0 +1,19 @@
+<div class="profile-reminder">
+  <div class="profile-reminder__icon">
+    <mat-icon aria-hidden="true">manage_accounts</mat-icon>
+  </div>
+
+  <h2 mat-dialog-title>Complete your profile</h2>
+
+  <mat-dialog-content>
+    <p>Add your name, gender, and mobile number so Xpense can personalize your dashboard and account settings.</p>
+  </mat-dialog-content>
+
+  <mat-dialog-actions align="end">
+    <button mat-button type="button" (click)="remindLater()">Remind me later</button>
+    <button mat-flat-button type="button" (click)="updateNow()">
+      <mat-icon aria-hidden="true">edit</mat-icon>
+      Update now
+    </button>
+  </mat-dialog-actions>
+</div>

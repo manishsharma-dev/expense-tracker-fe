@@ -22,12 +22,22 @@
             <mat-label>Description</mat-label>
             <mat-icon matPrefix aria-hidden="true">description</mat-icon>
             <input matInput formControlName="description" placeholder="e.g. Grocery shopping at Whole Foods" />
+            @if (form.controls.description.hasError('required')) {
+              <mat-error>Description is required</mat-error>
+            } @else if (form.controls.description.hasError('maxlength')) {
+              <mat-error>Description must be 200 characters or less</mat-error>
+            }
           </mat-form-field>
 
           <div class="two-column">
             <mat-form-field appearance="outline" class="compact-field">
               <mat-label>Amount</mat-label>
               <input matInput formControlName="amount" type="number" placeholder="0.00" />
+              @if (form.controls.amount.hasError('required')) {
+                <mat-error>Amount is required</mat-error>
+              } @else if (form.controls.amount.hasError('min')) {
+                <mat-error>Amount must be greater than 0</mat-error>
+              }
             </mat-form-field>
 
             <mat-form-field appearance="outline" class="compact-field">
@@ -77,6 +87,11 @@
             />
             <mat-datepicker-toggle matIconSuffix [for]="picker"></mat-datepicker-toggle>
             <mat-datepicker #picker></mat-datepicker>
+            @if (form.controls.date.hasError('required')) {
+              <mat-error>Date is required</mat-error>
+            } @else if (form.controls.date.hasError('matDatepickerMax')) {
+              <mat-error>Date cannot be in the future</mat-error>
+            }
           </mat-form-field>
         </section>
 
@@ -101,6 +116,9 @@
                   </button>
                 }
               </div>
+              @if (form.controls.category.hasError('required') && form.controls.category.touched) {
+                <p class="field-error">Category is required</p>
+              }
 
               <mat-form-field appearance="outline" class="full-field compact-field subcategory-field">
                 <mat-label>Sub category</mat-label>
@@ -168,6 +186,9 @@
                   </div>
                 }
               </mat-radio-group>
+              @if (form.controls.paymentMethod.hasError('required') && form.controls.paymentMethod.touched) {
+                <p class="field-error">Payment method is required</p>
+              }
               <button class="add-card-button" type="button" (click)="addPaymentMethod()">+ Add payment method</button>
             </div>
           </div>
@@ -238,9 +259,8 @@
         </section>
 
         <div class="form-actions">
-          <a mat-button routerLink="/expenses">Cancel</a>
-          <button mat-button type="button">Save as Draft</button>
-          <button mat-flat-button type="submit" [disabled]="loadingReferences() || referenceActionLoading() || saving()">
+          <button mat-button type="button" (click)="resetForm()">Reset</button>
+          <button class="submit-action" mat-flat-button type="submit" [disabled]="loadingReferences() || referenceActionLoading() || saving()">
             <mat-icon aria-hidden="true">{{ isEditMode() ? 'save' : 'add_circle' }}</mat-icon>
             {{ isEditMode() ? 'Update Expense' : 'Add Expense' }}
           </button>

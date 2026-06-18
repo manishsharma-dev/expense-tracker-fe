@@ -48,9 +48,9 @@
         <span class="notification-dot" aria-hidden="true"></span>
       }
     </button>
-    <button class="avatar-btn" type="button" aria-label="User menu" [matMenuTriggerFor]="userMenu">JD</button>
+    <button class="avatar-btn" type="button" aria-label="User menu" [matMenuTriggerFor]="userMenu">{{ userInitials() }}</button>
     <mat-menu #userMenu="matMenu" xPosition="before" panelClass="user-menu-panel">
-      <button mat-menu-item type="button" disabled>
+      <button mat-menu-item type="button" routerLink="/profile">
         <mat-icon aria-hidden="true">person</mat-icon>
         <span>Profile</span>
       </button>

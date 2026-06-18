@@ -18,6 +18,7 @@ import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { finalize, forkJoin, take } from 'rxjs';
 import { ExpenseApiService } from 'app/core/services/apis/expense.service';
+import { AuthService as AuthStateService } from 'app/core/services/auth';
 import {
   ExpenseReferenceDialog,
   ExpenseReferenceDialogResult,
@@ -28,7 +29,7 @@ import { Category, Country, Expense, PaymentMethod, PaymentProvider, SubCategory
 import {
   filterCurrencyCountries,
   getCountryCurrencyLabel,
-  getDefaultCurrencyCountry,
+  getPreferredCurrencyCountry,
 } from 'app/core/shared/utils/country-currency';
 import { formatDateOnly } from 'app/core/shared/utils/date';
 import { PaymentMethodDialog, PaymentMethodDialogResult } from './payment-method-dialog';
@@ -75,6 +76,7 @@ export class Create implements OnInit, OnDestroy {
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
   private readonly sanitizer = inject(DomSanitizer);
+  private readonly authState = inject(AuthStateService);
   private receiptObjectUrl: string | null = null;
   private readonly expenseId = this.route.snapshot.paramMap.get('id');
 
@@ -399,6 +401,7 @@ export class Create implements OnInit, OnDestroy {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
       if (this.form.controls.country.invalid) this.countrySearch.markAsTouched();
+      this.snackBar.open('Please fill the required fields', 'Close', { duration: 2500 });
       return;
     }
 
@@ -421,6 +424,24 @@ export class Create implements OnInit, OnDestroy {
         this.snackBar.open(this.expenseId ? 'Could not update expense' : 'Could not add expense', 'Close', { duration: 2500 });
       },
     });
+  }
+
+  protected resetForm(): void {
+    this.form.reset({
+      description: '',
+      amount: null,
+      country: '',
+      date: this.maxExpenseDate,
+      category: '',
+      subCategory: '',
+      paymentMethod: '',
+      notes: '',
+    });
+    this.countrySearch.setValue('', { emitEvent: false });
+    this.countrySearchTerm.set('');
+    this.selectedCategory.set('');
+    this.setReceipt(null);
+    this.setDefaultCurrencyCountry(this.countries());
   }
 
   private loadExpenseForEdit(expenseId: string): void {
@@ -458,7 +479,7 @@ export class Create implements OnInit, OnDestroy {
         this.paymentProviders.set(paymentProviders.data.paymentProviders ?? []);
         this.paymentMethods.set(paymentMethods.data.paymentMethods ?? []);
         this.countries.set(loadedCountries);
-        this.setDefaultCountryFromBrowser(loadedCountries);
+        this.setDefaultCurrencyCountry(loadedCountries);
       },
       error: () => this.snackBar.open('Could not load expense details', 'Close', { duration: 2500 }),
     });
@@ -516,10 +537,10 @@ export class Create implements OnInit, OnDestroy {
     return  typeof category === 'string' ? category : category._id;
   }
 
-  private setDefaultCountryFromBrowser(countries: Country[]): void {
+  private setDefaultCurrencyCountry(countries: Country[]): void {
     if (this.form.controls.country.value || !countries.length) return;
 
-    const country = getDefaultCurrencyCountry(countries);
+    const country = getPreferredCurrencyCountry(countries, this.authState.user()?.country);
     if (!country) return;
 
     const countryLabel = getCountryCurrencyLabel(country);

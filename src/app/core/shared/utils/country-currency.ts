@@ -39,3 +39,17 @@ export const getDefaultCurrencyCountry = (countries: Country[]): Country | undef
   if (!countryCode) return undefined;
   return countries.find((country) => country.iso2?.toUpperCase() === countryCode);
 };
+
+export const getPreferredCurrencyCountry = (
+  countries: Country[],
+  preferredCountry?: Country | string
+): Country | undefined => {
+  const preferredCountryId = typeof preferredCountry === 'string' ? preferredCountry : preferredCountry?._id;
+  const preferredIso2 = typeof preferredCountry === 'string' ? undefined : preferredCountry?.iso2;
+  const preferredCurrencyCode = typeof preferredCountry === 'string' ? undefined : preferredCountry?.currency?.code;
+
+  return countries.find((country) => country._id === preferredCountryId)
+    ?? countries.find((country) => preferredIso2 && country.iso2?.toUpperCase() === preferredIso2.toUpperCase())
+    ?? countries.find((country) => preferredCurrencyCode && country.currency?.code === preferredCurrencyCode)
+    ?? getDefaultCurrencyCountry(countries);
+};
