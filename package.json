@@ -6,6 +6,7 @@
     "start": "ng serve",
     "start:ssr": "ng build && node dist/expense-tracker-fe/server/server.mjs",
     "build": "ng build",
+    "build:be-public": "node scripts/build-for-be.cjs",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "serve:ssr:expense-tracker-fe": "node dist/expense-tracker-fe/server/server.mjs"
