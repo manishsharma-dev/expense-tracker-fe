@@ -12,6 +12,9 @@ export type UserProfile = {
     country?: Country;
     isActive?: boolean;
     profileReminderDismissedAt?: string;
+    preferences?: {
+        saveScannedReceiptWithExpense?: boolean;
+    };
     profileComplete?: boolean;
     shouldPromptProfile?: boolean;
 };
@@ -45,4 +48,7 @@ export type UpdateProfileRequest = {
     gender?: UserGender | '';
     dateOfBirth?: string;
     country?: string;
+    preferences?: {
+        saveScannedReceiptWithExpense?: boolean;
+    };
 };

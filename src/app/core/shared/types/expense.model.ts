@@ -61,6 +61,39 @@ export type ExpenseReferenceResponse = {
   paymentMethod?: PaymentMethod;
 };
 
+export type MerchantRuleSuggestion = {
+  _id: string;
+  merchantName: string;
+  pattern: string;
+  category: Category;
+  subCategory?: SubCategory;
+  paymentMethod: PaymentMethod;
+  usageCount: number;
+  lastUsedAt?: string;
+};
+
+export type MerchantRuleSuggestionResponse = {
+  suggestions: MerchantRuleSuggestion[];
+};
+
+export type ReceiptScan = {
+  description?: string;
+  amount?: number | null;
+  date?: string | null;
+  paymentMethod?: PaymentMethod | null;
+  paymentMethodMatch?: {
+    score: number;
+    reason: string;
+    sourceText?: string;
+  } | null;
+  confidence?: number;
+  rawText?: string;
+};
+
+export type ReceiptScanResponse = {
+  scan: ReceiptScan;
+};
+
 export type Expense = {
   _id: string;
   amount: number;

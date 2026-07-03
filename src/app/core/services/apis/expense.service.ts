@@ -7,7 +7,9 @@ import {
   ExpenseListResponse,
   ExpenseReferenceResponse,
   ExpenseResponse,
+  MerchantRuleSuggestionResponse,
   PaymentMethod,
+  ReceiptScanResponse,
   SubCategory,
 } from '../../shared/types/expense.model';
 
@@ -63,6 +65,10 @@ export class ExpenseApiService {
     return this.api.get<CommonResponse<ExpenseReferenceResponse>>('countries/unique-currencies');
   }
 
+  getMerchantRuleSuggestions(query: string) {
+    return this.api.get<CommonResponse<MerchantRuleSuggestionResponse>>('merchant-rules/suggestions', { q: query });
+  }
+
   createPaymentMethod(
     paymentMethod: Pick<PaymentMethod, 'name' | 'type' | 'lastFour' | 'upiId' | 'nickname' | 'icon'> & {
       provider?: string;
@@ -90,6 +96,12 @@ export class ExpenseApiService {
 
   createExpense(expense: FormData) {
     return this.api.post<CommonResponse<ExpenseResponse>>('expenses', expense);
+  }
+
+  scanReceipt(receipt: File) {
+    const formData = new FormData();
+    formData.append('receipt', receipt);
+    return this.api.post<CommonResponse<ReceiptScanResponse>>('expenses/receipt/scan', formData);
   }
 
   getExpense(expenseId: string) {

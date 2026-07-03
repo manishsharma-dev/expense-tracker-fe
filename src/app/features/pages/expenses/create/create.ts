@@ -1,4 +1,4 @@
-import { Component, computed, inject, OnDestroy, OnInit, signal } from '@angular/core';
+import { Component, computed, DestroyRef, inject, OnDestroy, OnInit, signal } from '@angular/core';
 import { CdkDragDrop, DragDropModule, moveItemInArray } from '@angular/cdk/drag-drop';
 import { ScrollingModule } from '@angular/cdk/scrolling';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
@@ -13,19 +13,31 @@ import { MatInputModule } from '@angular/material/input';
 import { MatNativeDateModule } from '@angular/material/core';
 import { MatAutocompleteModule, MatAutocompleteSelectedEvent } from '@angular/material/autocomplete';
 import { MatRadioModule } from '@angular/material/radio';
+import { MatCheckboxModule } from '@angular/material/checkbox';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
-import { finalize, forkJoin, take } from 'rxjs';
+import { catchError, debounceTime, distinctUntilChanged, finalize, forkJoin, map, of, switchMap, take } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { ExpenseApiService } from 'app/core/services/apis/expense.service';
 import { AuthService as AuthStateService } from 'app/core/services/auth';
+import { AuthService as AuthApiService } from 'app/core/services/apis/auth.service';
 import {
   ExpenseReferenceDialog,
   ExpenseReferenceDialogResult,
 } from 'app/core/shared/components/expense-reference-dialog/expense-reference-dialog';
 import { ConfirmDialog } from 'app/core/shared/components/confirm-dialog/confirm-dialog';
 import { Loader } from 'app/core/shared/components/loader/loader';
-import { Category, Country, Expense, PaymentMethod, PaymentProvider, SubCategory } from 'app/core/shared/types/expense.model';
+import {
+  Category,
+  Country,
+  Expense,
+  MerchantRuleSuggestion,
+  PaymentMethod,
+  PaymentProvider,
+  ReceiptScan,
+  SubCategory,
+} from 'app/core/shared/types/expense.model';
 import {
   filterCurrencyCountries,
   getCountryCurrencyLabel,
@@ -61,6 +73,7 @@ type ExpenseForm = {
     MatInputModule,
     MatNativeDateModule,
     MatAutocompleteModule,
+    MatCheckboxModule,
     MatRadioModule,
     MatSelectModule,
     MatSnackBarModule,
@@ -77,6 +90,8 @@ export class Create implements OnInit, OnDestroy {
   private readonly route = inject(ActivatedRoute);
   private readonly sanitizer = inject(DomSanitizer);
   private readonly authState = inject(AuthStateService);
+  private readonly authApi = inject(AuthApiService);
+  private readonly destroyRef = inject(DestroyRef);
   private receiptObjectUrl: string | null = null;
   private readonly expenseId = this.route.snapshot.paramMap.get('id');
 
@@ -92,7 +107,12 @@ export class Create implements OnInit, OnDestroy {
   protected readonly receiptPreviewUrl = signal<string | null>(null);
   protected readonly receiptPreviewSafeUrl = signal<SafeResourceUrl | null>(null);
   protected readonly receiptPreviewType = signal<'image' | 'pdf' | null>(null);
+  protected readonly receiptScan = signal<ReceiptScan | null>(null);
+  protected readonly scanningReceipt = signal(false);
+  protected readonly saveReceiptWithExpense = signal(true);
   protected readonly selectedCategory = signal('');
+  protected readonly merchantSuggestions = signal<MerchantRuleSuggestion[]>([]);
+  protected readonly loadingMerchantSuggestions = signal(false);
   protected readonly saving = signal(false);
   protected readonly loadingReferences = signal(false);
   protected readonly referenceActionLoading = signal(false);
@@ -122,18 +142,20 @@ export class Create implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.loadReferences();
+    this.saveReceiptWithExpense.set(this.authState.user()?.preferences?.saveScannedReceiptWithExpense ?? true);
     if (this.expenseId) this.loadExpenseForEdit(this.expenseId);
-    this.form.controls.category.valueChanges.subscribe(() => {
+    this.form.controls.category.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
       this.selectedCategory.set(this.form.controls.category.value);
       this.form.controls.subCategory.setValue('');
     });
-    this.countrySearch.valueChanges.subscribe((value) => {
+    this.countrySearch.valueChanges.pipe(takeUntilDestroyed(this.destroyRef)).subscribe((value) => {
       this.countrySearchTerm.set(value);
       const selectedCountry = this.countries().find((country) => country._id === this.form.controls.country.value);
       if (selectedCountry && value !== getCountryCurrencyLabel(selectedCountry)) {
         this.form.controls.country.setValue('');
       }
     });
+    this.bindMerchantSuggestions();
   }
 
   ngOnDestroy(): void {
@@ -157,12 +179,67 @@ export class Create implements OnInit, OnDestroy {
     this.setReceipt(null);
   }
 
+  protected scanSelectedReceipt(): void {
+    const receipt = this.selectedReceipt();
+    if (!receipt) return;
+
+    this.loadingText.set('Scanning receipt...');
+    this.scanningReceipt.set(true);
+    this.expenseApi.scanReceipt(receipt).pipe(
+      take(1),
+      finalize(() => this.scanningReceipt.set(false))
+    ).subscribe({
+      next: (response) => {
+        this.receiptScan.set(response.data.scan);
+        this.snackBar.open('Receipt scanned. Review the suggestions before applying.', 'Close', { duration: 2800 });
+      },
+      error: (error) => {
+        this.snackBar.open(error?.error?.message || 'Could not scan receipt', 'Close', { duration: 3000 });
+      },
+    });
+  }
+
+  protected updateReceiptSavePreference(checked: boolean): void {
+    this.saveReceiptWithExpense.set(checked);
+    this.authApi.updateProfile({
+      preferences: {
+        saveScannedReceiptWithExpense: checked,
+      },
+    }).pipe(take(1)).subscribe({
+      next: (response) => this.authState.setUser(response.data.user),
+      error: () => this.snackBar.open('Could not save receipt preference', 'Close', { duration: 2500 }),
+    });
+  }
+
+  protected applyReceiptScan(): void {
+    const scan = this.receiptScan();
+    if (!scan) return;
+
+    if (scan.description) this.form.controls.description.setValue(scan.description);
+    if (scan.amount) this.form.controls.amount.setValue(scan.amount);
+    if (scan.date) {
+      const parsedDate = this.parseDateOnly(scan.date);
+      if (parsedDate) this.form.controls.date.setValue(parsedDate);
+    }
+    if (scan.paymentMethod?._id) this.form.controls.paymentMethod.setValue(scan.paymentMethod._id);
+
+    this.snackBar.open('Scanned details applied', 'Close', { duration: 1800 });
+  }
+
   protected selectCountry(event: MatAutocompleteSelectedEvent): void {
     const country = event.option.value as Country;
     this.form.controls.country.setValue(country._id);
     const countryLabel = getCountryCurrencyLabel(country);
     this.countrySearch.setValue(countryLabel, { emitEvent: false });
     this.countrySearchTerm.set(countryLabel);
+  }
+
+  protected applyMerchantSuggestion(suggestion: MerchantRuleSuggestion): void {
+    this.form.controls.category.setValue(suggestion.category?._id ?? '');
+    this.selectedCategory.set(suggestion.category?._id ?? '');
+    this.form.controls.subCategory.setValue(suggestion.subCategory?._id ?? '');
+    this.form.controls.paymentMethod.setValue(suggestion.paymentMethod?._id ?? '');
+    this.snackBar.open('Suggestion applied', 'Close', { duration: 1800 });
   }
 
   protected getPaymentMethodTypeLabel(type: PaymentMethod['type']): string {
@@ -426,6 +503,29 @@ export class Create implements OnInit, OnDestroy {
     });
   }
 
+  private bindMerchantSuggestions(): void {
+    this.form.controls.description.valueChanges.pipe(
+      debounceTime(350),
+      map((value) => value.trim()),
+      distinctUntilChanged(),
+      switchMap((value) => {
+        if (value.length < 2 || this.isEditMode()) {
+          this.merchantSuggestions.set([]);
+          return of(null);
+        }
+
+        this.loadingMerchantSuggestions.set(true);
+        return this.expenseApi.getMerchantRuleSuggestions(value).pipe(
+          catchError(() => of(null)),
+          finalize(() => this.loadingMerchantSuggestions.set(false))
+        );
+      }),
+      takeUntilDestroyed(this.destroyRef)
+    ).subscribe((response) => {
+      this.merchantSuggestions.set(response?.data.suggestions ?? []);
+    });
+  }
+
   protected resetForm(): void {
     this.form.reset({
       description: '',
@@ -508,7 +608,9 @@ export class Create implements OnInit, OnDestroy {
     formData.append('country', raw.country);
     if (raw.subCategory || this.expenseId) formData.append('subCategory', raw.subCategory);
     if (raw.notes || this.expenseId) formData.append('notes', raw.notes);
-    if (this.selectedReceipt()) formData.append('receipt', this.selectedReceipt() as File);
+    if (this.selectedReceipt() && this.saveReceiptWithExpense()) {
+      formData.append('receipt', this.selectedReceipt() as File);
+    }
     return formData;
   }
 
@@ -552,6 +654,7 @@ export class Create implements OnInit, OnDestroy {
   private setReceipt(file: File | null): void {
     this.clearReceiptPreview();
     this.selectedReceipt.set(file);
+    this.receiptScan.set(null);
     if (!file) return;
 
     const previewType = file.type === 'application/pdf' ? 'pdf' : file.type.startsWith('image/') ? 'image' : null;
@@ -572,6 +675,14 @@ export class Create implements OnInit, OnDestroy {
     this.receiptPreviewUrl.set(null);
     this.receiptPreviewSafeUrl.set(null);
     this.receiptPreviewType.set(null);
+  }
+
+  private parseDateOnly(value: string): Date | null {
+    const match = value.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if (!match) return null;
+
+    const date = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+    return Number.isNaN(date.getTime()) ? null : date;
   }
 
 }

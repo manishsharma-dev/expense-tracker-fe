@@ -15,6 +15,122 @@
     }
     <mat-card-content>
       <form class="expense-form" [formGroup]="form" (ngSubmit)="saveExpense()">
+        <section class="form-section receipt-smart-fill">
+          <h2>Smart Fill</h2>
+          @if (scanningReceipt()) {
+            <app-loader [overlay]="true" text="Scanning receipt..." />
+          }
+          <label class="receipt-dropzone" for="receipt-upload">
+            <mat-icon aria-hidden="true">document_scanner</mat-icon>
+            <strong>Upload a receipt or payment screenshot</strong>
+            @if (selectedReceipt()) {
+              <span>{{ selectedReceipt()?.name }}</span>
+            } @else if (currentReceiptName()) {
+              <span>Current file: {{ currentReceiptName() }}</span>
+            } @else {
+              <span>Scan to auto-fill this expense</span>
+            }
+            <small>You can review detected details before saving.</small>
+            <input
+              #receiptInput
+              id="receipt-upload"
+              class="receipt-input"
+              type="file"
+              accept="image/*,.pdf"
+              (change)="onReceiptSelected($event)"
+            />
+          </label>
+
+          @if (selectedReceipt()) {
+            <div class="receipt-save-choice">
+              <mat-checkbox
+                [checked]="saveReceiptWithExpense()"
+                (change)="updateReceiptSavePreference($event.checked)"
+              >
+                Save this file with the transaction
+              </mat-checkbox>
+              <p>
+                @if (saveReceiptWithExpense()) {
+                  This file will be saved with the expense when you submit.
+                } @else {
+                  This file is only used for scanning and will not be saved with the expense.
+                }
+              </p>
+            </div>
+
+            <div class="receipt-preview">
+              <div class="receipt-preview__header">
+                <span>
+                  <strong>{{ selectedReceipt()?.name }}</strong>
+                  <small>{{ selectedReceipt()?.type || 'Selected file' }}</small>
+                </span>
+                <div class="receipt-preview__actions">
+                  <button
+                    mat-stroked-button
+                    type="button"
+                    [disabled]="scanningReceipt()"
+                    (click)="scanSelectedReceipt()"
+                  >
+                    <mat-icon aria-hidden="true">document_scanner</mat-icon>
+                    Scan
+                  </button>
+                  <button
+                    mat-icon-button
+                    type="button"
+                    aria-label="Remove receipt"
+                    (click)="removeReceipt(receiptInput, $event)"
+                  >
+                    <mat-icon aria-hidden="true">close</mat-icon>
+                  </button>
+                </div>
+              </div>
+
+              @if (receiptPreviewType() === 'image') {
+                <img class="receipt-preview__image" [src]="receiptPreviewUrl()" alt="Receipt preview" />
+              } @else if (receiptPreviewType() === 'pdf') {
+                <div class="receipt-preview__pdf">
+                  <iframe [src]="receiptPreviewSafeUrl()" title="Receipt PDF preview"></iframe>
+                  <a [href]="receiptPreviewUrl()" target="_blank" rel="noopener">Open PDF in new tab</a>
+                </div>
+              } @else {
+                <div class="receipt-preview__fallback">
+                  <mat-icon aria-hidden="true">draft</mat-icon>
+                  <span>Preview is not available for this file type.</span>
+                </div>
+              }
+            </div>
+          }
+          @if (receiptScan()) {
+            <div class="receipt-scan-card">
+              <div class="receipt-scan-card__header">
+                <span>
+                  <strong>Scanned details</strong>
+                  <small>Confidence {{ receiptScan()?.confidence || 0 }}%</small>
+                </span>
+                <button mat-stroked-button type="button" (click)="applyReceiptScan()">Apply details</button>
+              </div>
+              <div class="receipt-scan-card__grid">
+                <span>
+                  <small>Description</small>
+                  <strong>{{ receiptScan()?.description || 'Not detected' }}</strong>
+                </span>
+                <span>
+                  <small>Amount</small>
+                  <strong>{{ receiptScan()?.amount || 'Not detected' }}</strong>
+                </span>
+                <span>
+                  <small>Date</small>
+                  <strong>{{ receiptScan()?.date || 'Not detected' }}</strong>
+                </span>
+                <span>
+                  <small>Payment method</small>
+                  <strong>{{ receiptScan()?.paymentMethod?.name || 'Not detected' }}</strong>
+                </span>
+              </div>
+            </div>
+          }
+        </section>
+
         <section class="form-section">
           <h2>Expense Details</h2>
 
@@ -28,6 +144,29 @@
               <mat-error>Description must be 200 characters or less</mat-error>
             }
           </mat-form-field>
+          @if (loadingMerchantSuggestions() || merchantSuggestions().length) {
+            <div class="merchant-suggestions" aria-label="Merchant suggestions">
+              @if (loadingMerchantSuggestions()) {
+                <span class="merchant-suggestions__loading">Checking saved defaults...</span>
+              } @else {
+                @for (suggestion of merchantSuggestions(); track suggestion._id) {
+                  <button type="button" class="merchant-suggestion" (click)="applyMerchantSuggestion(suggestion)">
+                    <mat-icon aria-hidden="true">{{ suggestion.category.icon || 'category' }}</mat-icon>
+                    <span>
+                      <strong>{{ suggestion.merchantName }}</strong>
+                      <small>
+                        {{ suggestion.category.name }}
+                        @if (suggestion.subCategory) {
+                          &middot; {{ suggestion.subCategory.name }}
+                        }
+                        &middot; {{ suggestion.paymentMethod.name }}
+                      </small>
+                    </span>
+                  </button>
+                }
+              }
+            </div>
+          }
 
           <div class="two-column">
             <mat-form-field appearance="outline" class="compact-field">
@@ -200,62 +339,6 @@
             <mat-label>Notes or tags</mat-label>
             <textarea matInput formControlName="notes" rows="3"></textarea>
           </mat-form-field>
-        </section>
-
-        <section class="form-section">
-          <h2>Receipt</h2>
-          <label class="receipt-dropzone" for="receipt-upload">
-            <mat-icon aria-hidden="true">upload</mat-icon>
-            <strong>Upload a receipt or screenshot</strong>
-            @if (selectedReceipt()) {
-              <span>{{ selectedReceipt()?.name }}</span>
-            } @else if (currentReceiptName()) {
-              <span>Current file: {{ currentReceiptName() }}</span>
-            } @else {
-              <span>Drag & drop here or browse files</span>
-            }
-            <small>Supports JPG, PNG, WebP, PDF up to 10MB</small>
-            <input
-              #receiptInput
-              id="receipt-upload"
-              class="receipt-input"
-              type="file"
-              accept="image/*,.pdf"
-              (change)="onReceiptSelected($event)"
-            />
-          </label>
-          @if (selectedReceipt()) {
-            <div class="receipt-preview">
-              <div class="receipt-preview__header">
-                <span>
-                  <strong>{{ selectedReceipt()?.name }}</strong>
-                  <small>{{ selectedReceipt()?.type || 'Selected file' }}</small>
-                </span>
-                <button
-                  mat-icon-button
-                  type="button"
-                  aria-label="Remove receipt"
-                  (click)="removeReceipt(receiptInput, $event)"
-                >
-                  <mat-icon aria-hidden="true">close</mat-icon>
-                </button>
-              </div>
-
-              @if (receiptPreviewType() === 'image') {
-                <img class="receipt-preview__image" [src]="receiptPreviewUrl()" alt="Receipt preview" />
-              } @else if (receiptPreviewType() === 'pdf') {
-                <div class="receipt-preview__pdf">
-                  <iframe [src]="receiptPreviewSafeUrl()" title="Receipt PDF preview"></iframe>
-                  <a [href]="receiptPreviewUrl()" target="_blank" rel="noopener">Open PDF in new tab</a>
-                </div>
-              } @else {
-                <div class="receipt-preview__fallback">
-                  <mat-icon aria-hidden="true">draft</mat-icon>
-                  <span>Preview is not available for this file type.</span>
-                </div>
-              }
-            </div>
-          }
         </section>
 
         <div class="form-actions">

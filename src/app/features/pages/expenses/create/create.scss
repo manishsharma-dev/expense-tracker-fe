@@ -73,6 +73,14 @@
   }
 }
 
+.receipt-smart-fill {
+  position: relative;
+  padding: 14px;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 10px;
+  background: var(--mat-sys-surface-container-lowest, var(--mat-sys-surface));
+}
+
 .section-title-row {
   display: flex;
   align-items: center;
@@ -98,6 +106,75 @@
 
 .date-field {
   max-width: 300px;
+}
+
+.merchant-suggestions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: -10px;
+}
+
+.merchant-suggestions__loading,
+.merchant-suggestion {
+  min-height: 38px;
+  border-radius: 999px;
+  font-size: 12px;
+}
+
+.merchant-suggestions__loading {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 12px;
+  border: 1px dashed var(--mat-sys-outline-variant);
+  color: var(--mat-sys-on-surface-variant);
+}
+
+.merchant-suggestion {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: 100%;
+  padding: 6px 12px 6px 10px;
+  border: 1px solid var(--mat-sys-outline-variant);
+  background: var(--mat-sys-surface-container-lowest, var(--mat-sys-surface));
+  color: var(--mat-sys-on-surface);
+  cursor: pointer;
+  text-align: left;
+
+  mat-icon {
+    flex: 0 0 18px;
+    width: 18px;
+    height: 18px;
+    color: var(--mat-sys-primary);
+    font-size: 18px;
+  }
+
+  span {
+    display: grid;
+    min-width: 0;
+  }
+
+  strong,
+  small {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  strong {
+    font-weight: 800;
+  }
+
+  small {
+    color: var(--mat-sys-on-surface-variant);
+    font-size: 11px;
+  }
+
+  &:hover {
+    border-color: var(--mat-sys-primary);
+    background: var(--mat-sys-surface-container);
+  }
 }
 
 ::ng-deep .country-autocomplete-panel {
@@ -418,6 +495,22 @@
   }
 }
 
+.receipt-save-choice {
+  display: grid;
+  gap: 2px;
+  padding: 10px 12px;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 8px;
+  background: var(--mat-sys-surface-container-low);
+
+  p {
+    margin: 0 0 0 32px;
+    color: var(--mat-sys-on-surface-variant);
+    font-size: 12px;
+    line-height: 1.35;
+  }
+}
+
 .receipt-input {
   position: absolute;
   width: 1px;
@@ -469,6 +562,23 @@
   }
 }
 
+.receipt-preview__actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+
+  button[mat-stroked-button] {
+    --mdc-outlined-button-container-shape: 8px;
+    height: 34px;
+  }
+
+  mat-icon {
+    font-size: 18px;
+    width: 18px;
+    height: 18px;
+  }
+}
+
 .receipt-preview__image {
   display: block;
   width: calc(100% - 24px);
@@ -508,6 +618,69 @@
   padding: 18px 12px 22px;
   color: var(--mat-sys-on-surface-variant);
   font-size: 13px;
+}
+
+.receipt-scan-card {
+  display: grid;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid var(--mat-sys-outline-variant);
+  border-radius: 10px;
+  background: var(--mat-sys-surface-container-lowest, var(--mat-sys-surface));
+}
+
+.receipt-scan-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+
+  span {
+    display: grid;
+    gap: 2px;
+  }
+
+  strong {
+    font-size: 13px;
+    font-weight: 800;
+  }
+
+  small {
+    color: var(--mat-sys-on-surface-variant);
+    font-size: 11px;
+  }
+}
+
+.receipt-scan-card__grid {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1.2fr;
+  gap: 10px;
+
+  span {
+    display: grid;
+    gap: 3px;
+    min-width: 0;
+    padding: 10px;
+    border-radius: 8px;
+    background: var(--mat-sys-surface-container-low);
+  }
+
+  small,
+  strong {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  small {
+    color: var(--mat-sys-on-surface-variant);
+    font-size: 11px;
+  }
+
+  strong {
+    font-size: 13px;
+    font-weight: 800;
+  }
 }
 
 .form-actions {
@@ -564,6 +737,14 @@
     max-width: none;
   }
 
+  .merchant-suggestions {
+    display: grid;
+  }
+
+  .merchant-suggestion {
+    width: 100%;
+  }
+
   .category-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
@@ -583,6 +764,19 @@
 
   .receipt-preview__pdf iframe {
     height: 300px;
+  }
+
+  .receipt-preview__header,
+  .receipt-scan-card__header {
+    align-items: flex-start;
+  }
+
+  .receipt-preview__actions {
+    flex-shrink: 0;
+  }
+
+  .receipt-scan-card__grid {
+    grid-template-columns: 1fr;
   }
 
   .form-actions {
