@@ -651,22 +651,31 @@
   }
 }
 
+.receipt-scan-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
 .receipt-scan-card__grid {
   display: grid;
   grid-template-columns: 2fr 1fr 1fr 1.2fr;
   gap: 10px;
 
-  span {
+  .scan-field {
     display: grid;
     gap: 3px;
     min-width: 0;
     padding: 10px;
+    border: 1px solid transparent;
     border-radius: 8px;
     background: var(--mat-sys-surface-container-low);
   }
 
   small,
-  strong {
+  strong,
+  span {
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
@@ -681,6 +690,46 @@
     font-size: 13px;
     font-weight: 800;
   }
+
+  em {
+    width: fit-content;
+    padding: 2px 7px;
+    border-radius: 999px;
+    background: var(--mat-sys-surface-container-high);
+    color: var(--mat-sys-on-surface-variant);
+    font-size: 10px;
+    font-style: normal;
+    font-weight: 800;
+    text-transform: uppercase;
+  }
+
+  span {
+    color: var(--mat-sys-on-surface-variant);
+    font-size: 11px;
+  }
+}
+
+.scan-field--high {
+  border-color: color-mix(in srgb, var(--mat-sys-primary) 45%, transparent) !important;
+
+  em {
+    background: color-mix(in srgb, var(--mat-sys-primary) 16%, transparent);
+    color: var(--mat-sys-primary);
+  }
+}
+
+.scan-field--medium,
+.scan-field--low {
+  border-color: color-mix(in srgb, var(--mat-sys-tertiary) 55%, transparent) !important;
+
+  em {
+    background: color-mix(in srgb, var(--mat-sys-tertiary) 20%, transparent);
+    color: var(--mat-sys-tertiary);
+  }
+}
+
+.scan-field--none {
+  opacity: 0.72;
 }
 
 .form-actions {

@@ -105,27 +105,46 @@
               <div class="receipt-scan-card__header">
                 <span>
                   <strong>Scanned details</strong>
-                  <small>Confidence {{ receiptScan()?.confidence || 0 }}%</small>
+                  <small>OCR confidence {{ receiptScan()?.confidence || 0 }}%. Low-confidence values are not auto-applied.</small>
                 </span>
-                <button mat-stroked-button type="button" (click)="applyReceiptScan()">Apply details</button>
+                <div class="receipt-scan-card__actions">
+                  <button mat-stroked-button type="button" (click)="applyReceiptScan()">Apply reliable</button>
+                  <button mat-button type="button" (click)="applyAllReceiptScan()">Apply all</button>
+                </div>
               </div>
               <div class="receipt-scan-card__grid">
-                <span>
+                <div class="scan-field scan-field--{{ getScanFieldConfidence('description') }}">
                   <small>Description</small>
-                  <strong>{{ receiptScan()?.description || 'Not detected' }}</strong>
-                </span>
-                <span>
+                  <strong>{{ getScanFieldDisplayValue('description') }}</strong>
+                  <em>{{ getScanConfidenceLabel(getScanFieldConfidence('description')) }}</em>
+                  @if (getScanFieldSource('description')) {
+                    <span>{{ getScanFieldSource('description') }}</span>
+                  }
+                </div>
+                <div class="scan-field scan-field--{{ getScanFieldConfidence('amount') }}">
                   <small>Amount</small>
-                  <strong>{{ receiptScan()?.amount || 'Not detected' }}</strong>
-                </span>
-                <span>
+                  <strong>{{ getScanFieldDisplayValue('amount') }}</strong>
+                  <em>{{ getScanConfidenceLabel(getScanFieldConfidence('amount')) }}</em>
+                  @if (getScanFieldSource('amount')) {
+                    <span>{{ getScanFieldSource('amount') }}</span>
+                  }
+                </div>
+                <div class="scan-field scan-field--{{ getScanFieldConfidence('date') }}">
                   <small>Date</small>
-                  <strong>{{ receiptScan()?.date || 'Not detected' }}</strong>
-                </span>
-                <span>
+                  <strong>{{ getScanFieldDisplayValue('date') }}</strong>
+                  <em>{{ getScanConfidenceLabel(getScanFieldConfidence('date')) }}</em>
+                  @if (getScanFieldSource('date')) {
+                    <span>{{ getScanFieldSource('date') }}</span>
+                  }
+                </div>
+                <div class="scan-field scan-field--{{ getScanFieldConfidence('paymentMethod') }}">
                   <small>Payment method</small>
-                  <strong>{{ receiptScan()?.paymentMethod?.name || 'Not detected' }}</strong>
-                </span>
+                  <strong>{{ getScanFieldDisplayValue('paymentMethod') }}</strong>
+                  <em>{{ getScanConfidenceLabel(getScanFieldConfidence('paymentMethod')) }}</em>
+                  @if (getScanFieldSource('paymentMethod')) {
+                    <span>{{ getScanFieldSource('paymentMethod') }}</span>
+                  }
+                </div>
               </div>
             </div>
           }

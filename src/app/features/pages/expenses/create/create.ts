@@ -36,6 +36,8 @@ import {
   PaymentMethod,
   PaymentProvider,
   ReceiptScan,
+  ReceiptScanConfidence,
+  ReceiptScanField,
   SubCategory,
 } from 'app/core/shared/types/expense.model';
 import {
@@ -215,15 +217,41 @@ export class Create implements OnInit, OnDestroy {
     const scan = this.receiptScan();
     if (!scan) return;
 
-    if (scan.description) this.form.controls.description.setValue(scan.description);
-    if (scan.amount) this.form.controls.amount.setValue(scan.amount);
-    if (scan.date) {
-      const parsedDate = this.parseDateOnly(scan.date);
+    if (this.isReliableScanField(scan.fields?.description)) {
+      this.form.controls.description.setValue(scan.fields?.description?.value ?? '');
+    }
+    if (this.isReliableScanField(scan.fields?.amount)) {
+      this.form.controls.amount.setValue(scan.fields?.amount?.value ?? null);
+    }
+    if (this.isReliableScanField(scan.fields?.date)) {
+      const parsedDate = this.parseDateOnly(scan.fields?.date?.value ?? '');
       if (parsedDate) this.form.controls.date.setValue(parsedDate);
     }
-    if (scan.paymentMethod?._id) this.form.controls.paymentMethod.setValue(scan.paymentMethod._id);
+    if (this.isReliableScanField(scan.fields?.paymentMethod) && scan.fields?.paymentMethod?.value?._id) {
+      this.form.controls.paymentMethod.setValue(scan.fields.paymentMethod.value._id);
+    }
 
-    this.snackBar.open('Scanned details applied', 'Close', { duration: 1800 });
+    this.snackBar.open('Reliable scanned details applied. Please verify the rest.', 'Close', { duration: 2500 });
+  }
+
+  protected applyAllReceiptScan(): void {
+    const scan = this.receiptScan();
+    if (!scan) return;
+
+    const description = scan.fields?.description?.value ?? scan.description;
+    const amount = scan.fields?.amount?.value ?? scan.amount;
+    const date = scan.fields?.date?.value ?? scan.date;
+    const paymentMethod = scan.fields?.paymentMethod?.value ?? scan.paymentMethod;
+
+    if (description) this.form.controls.description.setValue(description);
+    if (amount) this.form.controls.amount.setValue(amount);
+    if (date) {
+      const parsedDate = this.parseDateOnly(date);
+      if (parsedDate) this.form.controls.date.setValue(parsedDate);
+    }
+    if (paymentMethod?._id) this.form.controls.paymentMethod.setValue(paymentMethod._id);
+
+    this.snackBar.open('All scanned details applied. Please verify before saving.', 'Close', { duration: 2500 });
   }
 
   protected selectCountry(event: MatAutocompleteSelectedEvent): void {
@@ -265,6 +293,40 @@ export class Create implements OnInit, OnDestroy {
     ].filter(Boolean);
 
     return parts.join(' • ') || this.getPaymentMethodTypeLabel(method.type);
+  }
+
+  protected getScanField<T>(field: keyof NonNullable<ReceiptScan['fields']>): ReceiptScanField<T> | undefined {
+    return this.receiptScan()?.fields?.[field] as ReceiptScanField<T> | undefined;
+  }
+
+  protected getScanFieldConfidence(field: keyof NonNullable<ReceiptScan['fields']>): ReceiptScanConfidence {
+    return this.receiptScan()?.fields?.[field]?.confidence ?? 'none';
+  }
+
+  protected getScanFieldSource(field: keyof NonNullable<ReceiptScan['fields']>): string {
+    return this.receiptScan()?.fields?.[field]?.source ?? '';
+  }
+
+  protected getScanFieldDisplayValue(field: keyof NonNullable<ReceiptScan['fields']>): string | number {
+    const value = this.receiptScan()?.fields?.[field]?.value;
+    if (!value) return 'Not detected';
+    if (field === 'paymentMethod') return (value as PaymentMethod).name || 'Not detected';
+    return value as string | number;
+  }
+
+  protected getScanConfidenceLabel(confidence: ReceiptScanConfidence | undefined): string {
+    const labels: Record<ReceiptScanConfidence, string> = {
+      none: 'Not detected',
+      low: 'Needs review',
+      medium: 'Verify',
+      high: 'Reliable',
+    };
+
+    return labels[confidence ?? 'none'];
+  }
+
+  protected isReliableScanField<T>(field: ReceiptScanField<T> | undefined): boolean {
+    return field?.confidence === 'high' && field.value !== null && field.value !== undefined && field.value !== '';
   }
 
   protected addCategory(): void {

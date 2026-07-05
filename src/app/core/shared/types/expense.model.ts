@@ -88,6 +88,25 @@ export type ReceiptScan = {
   } | null;
   confidence?: number;
   rawText?: string;
+  fields?: {
+    description?: ReceiptScanField<string>;
+    amount?: ReceiptScanField<number>;
+    date?: ReceiptScanField<string>;
+    paymentMethod?: ReceiptScanField<PaymentMethod>;
+  };
+};
+
+export type ReceiptScanConfidence = 'none' | 'low' | 'medium' | 'high';
+
+export type ReceiptScanField<T> = {
+  value: T | null;
+  confidence: ReceiptScanConfidence;
+  source?: string;
+  alternatives?: Array<{
+    value: T;
+    confidence: ReceiptScanConfidence;
+    source?: string;
+  }>;
 };
 
 export type ReceiptScanResponse = {
