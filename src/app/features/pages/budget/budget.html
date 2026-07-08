@@ -73,37 +73,127 @@
           <div class="section-title-row">
             <div>
               <h2>Category Budgets</h2>
-              <p>Enable categories only when you want to reserve part of the budget for them.</p>
+              <p>Add only the categories you want to track against this month's budget.</p>
             </div>
             <button mat-button type="button" (click)="resetAllocations()">Clear categories</button>
           </div>
 
-          <div class="category-list" formArrayName="allocations">
-            @for (allocation of allocationControls(); track allocation.controls.categoryId.value; let index = $index) {
-              <div class="category-row" [formGroupName]="index">
-                <mat-checkbox formControlName="selected">
-                  <span class="category-label">
-                    <mat-icon aria-hidden="true">{{ categories()[index]?.icon || 'category' }}</mat-icon>
-                    <span>
-                      <strong>{{ categories()[index]?.name }}</strong>
-                      <small>{{ categories()[index]?.isSystem ? 'Common category' : 'Custom category' }}</small>
+          <div class="category-editor" [formGroup]="categoryBudgetForm">
+            <mat-form-field appearance="outline">
+              <mat-label>Category</mat-label>
+              <mat-select formControlName="categoryId">
+                <mat-select-trigger>
+                  @if (selectedCategory(); as category) {
+                    <span class="selected-category">
+                      <mat-icon aria-hidden="true">{{ category.icon || 'category' }}</mat-icon>
+                      <span>{{ category.name }}</span>
                     </span>
-                  </span>
-                </mat-checkbox>
+                  }
+                </mat-select-trigger>
+                @for (category of availableCategories(); track category._id) {
+                  <mat-option [value]="category._id">
+                    <span class="category-option">
+                      <mat-icon aria-hidden="true">{{ category.icon || 'category' }}</mat-icon>
+                      <span>{{ category.name }}</span>
+                    </span>
+                  </mat-option>
+                }
+              </mat-select>
+              @if (categoryBudgetForm.controls.categoryId.hasError('required')) {
+                <mat-error>Select a category</mat-error>
+              }
+            </mat-form-field>
 
-                <mat-form-field appearance="outline" class="amount-field">
-                  <mat-label>Budget</mat-label>
-                  <input
-                    matInput
-                    type="number"
-                    formControlName="amount"
-                    placeholder="0.00"
-                    [readonly]="!allocation.controls.selected.value"
-                  />
-                </mat-form-field>
-              </div>
-            }
+            <mat-form-field appearance="outline">
+              <mat-label>Set budget</mat-label>
+              <input matInput type="number" formControlName="amount" placeholder="0.00" />
+              @if (categoryBudgetForm.controls.amount.hasError('required')) {
+                <mat-error>Budget amount is required</mat-error>
+              } @else if (categoryBudgetForm.controls.amount.hasError('min')) {
+                <mat-error>Enter an amount greater than 0</mat-error>
+              }
+            </mat-form-field>
+
+            <button mat-flat-button type="button" class="add-category-button" (click)="addOrUpdateCategoryBudget()">
+              <mat-icon aria-hidden="true">add</mat-icon>
+              Add / Update
+            </button>
           </div>
+
+          @if (budgetedAllocations().length) {
+            <div class="budget-table-wrap">
+              <table mat-table [dataSource]="budgetedAllocations()" class="budget-table">
+                <ng-container matColumnDef="category">
+                  <th mat-header-cell *matHeaderCellDef>Category</th>
+                  <td mat-cell *matCellDef="let allocation">
+                    <span class="category-label">
+                      <mat-icon aria-hidden="true">{{ allocation.category.icon || 'category' }}</mat-icon>
+                      <span>
+                        <strong>{{ allocation.category.name }}</strong>
+                        <small>{{ allocation.category.isSystem ? 'Common category' : 'Custom category' }}</small>
+                      </span>
+                    </span>
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="set">
+                  <th mat-header-cell *matHeaderCellDef>Set</th>
+                  <td mat-cell *matCellDef="let allocation">
+                    {{ allocation.amount | currency:'INR':'symbol':'1.0-0' }}
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="used">
+                  <th mat-header-cell *matHeaderCellDef>Used</th>
+                  <td mat-cell *matCellDef="let allocation">
+                    {{ (allocation.used || 0) | currency:'INR':'symbol':'1.0-0' }}
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="remaining">
+                  <th mat-header-cell *matHeaderCellDef>Remaining</th>
+                  <td mat-cell *matCellDef="let allocation">
+                    <span [class.remaining-negative]="(allocation.remaining || 0) < 0">
+                      {{ (allocation.remaining || 0) | currency:'INR':'symbol':'1.0-0' }}
+                    </span>
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="utilization">
+                  <th mat-header-cell *matHeaderCellDef>Utilization</th>
+                  <td mat-cell *matCellDef="let allocation">
+                    <span class="utilization-pill" [ngClass]="utilizationClass(allocation)">
+                      {{ allocation.utilizationPercent || 0 }}%
+                      <small>{{ utilizationLabel(allocation) }}</small>
+                    </span>
+                  </td>
+                </ng-container>
+
+                <ng-container matColumnDef="actions">
+                  <th mat-header-cell *matHeaderCellDef>Actions</th>
+                  <td mat-cell *matCellDef="let allocation">
+                    <div class="row-actions">
+                      <button mat-icon-button type="button" aria-label="Edit category budget" (click)="editAllocation(allocation)">
+                        <mat-icon aria-hidden="true">edit</mat-icon>
+                      </button>
+                      <button mat-icon-button type="button" aria-label="Remove category budget" (click)="removeAllocation(allocation.category._id)">
+                        <mat-icon aria-hidden="true">delete</mat-icon>
+                      </button>
+                    </div>
+                  </td>
+                </ng-container>
+
+                <tr mat-header-row *matHeaderRowDef="displayedColumns"></tr>
+                <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
+              </table>
+            </div>
+          } @else {
+            <div class="empty-state">
+              <mat-icon aria-hidden="true">savings</mat-icon>
+              <strong>No category budgets yet</strong>
+              <span>Select a category above to start tracking set vs used spending.</span>
+            </div>
+          }
         </section>
       </form>
     </mat-card-content>

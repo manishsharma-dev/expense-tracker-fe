@@ -3,6 +3,10 @@ import { Category } from './expense.model';
 export type BudgetAllocation = {
   category: Category;
   amount: number;
+  used?: number;
+  remaining?: number;
+  utilizationPercent?: number;
+  isOverBudget?: boolean;
 };
 
 export type Budget = {

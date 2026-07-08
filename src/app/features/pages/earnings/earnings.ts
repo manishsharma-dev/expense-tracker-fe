@@ -2,6 +2,7 @@ import { CommonModule, DatePipe } from '@angular/common';
 import { ScrollingModule } from '@angular/cdk/scrolling';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { MatButtonToggleModule } from '@angular/material/button-toggle';
 import { MatButtonModule } from '@angular/material/button';
 import { MatCardModule } from '@angular/material/card';
 import { MatNativeDateModule } from '@angular/material/core';
@@ -22,7 +23,7 @@ import {
   ExpenseReferenceDialogResult,
 } from 'app/core/shared/components/expense-reference-dialog/expense-reference-dialog';
 import { Loader } from 'app/core/shared/components/loader/loader';
-import { Earning, EarningCategory } from 'app/core/shared/types/earning.model';
+import { Earning, EarningCategory, EarningPeriod, EarningSummaryRow, Pagination } from 'app/core/shared/types/earning.model';
 import { Country } from 'app/core/shared/types/expense.model';
 import {
   filterCurrencyCountries,
@@ -39,6 +40,7 @@ import { formatDateOnly } from 'app/core/shared/utils/date';
     ReactiveFormsModule,
     MatAutocompleteModule,
     MatButtonModule,
+    MatButtonToggleModule,
     MatCardModule,
     MatDatepickerModule,
     MatDialogModule,
@@ -64,12 +66,26 @@ export class Earnings implements OnInit {
 
   protected readonly categories = signal<EarningCategory[]>([]);
   protected readonly earnings = signal<Earning[]>([]);
+  protected readonly earningSummary = signal<EarningSummaryRow[]>([]);
+  protected readonly earningPagination = signal<Pagination | null>(null);
+  protected readonly summaryPagination = signal<Pagination | null>(null);
   protected readonly countries = signal<Country[]>([]);
   protected readonly countrySearch = new FormControl('', { nonNullable: true });
   protected readonly countrySearchTerm = signal('');
   protected readonly loading = signal(false);
+  protected readonly loadingMoreEarnings = signal(false);
+  protected readonly loadingMoreSummary = signal(false);
   protected readonly saving = signal(false);
   protected readonly maxEarningDate = new Date();
+  protected readonly summaryPeriod = signal<EarningPeriod>('month');
+  protected readonly summaryLimit = 6;
+  protected readonly earningLimit = 6;
+  protected readonly periodOptions: Array<{ value: EarningPeriod; label: string }> = [
+    { value: 'day', label: 'Day' },
+    { value: 'week', label: 'Week' },
+    { value: 'month', label: 'Month' },
+    { value: 'year', label: 'Year' },
+  ];
 
   protected readonly form = new FormGroup({
     amount: new FormControl<number | null>(null, [Validators.required, Validators.min(0.01)]),
@@ -103,8 +119,26 @@ export class Earnings implements OnInit {
     this.countrySearchTerm.set(countryLabel);
   }
 
-  protected totalEarned(): number {
-    return this.earnings().reduce((sum, earning) => sum + earning.amount, 0);
+  protected latestSummaryTotal(): number {
+    return this.earningSummary()[0]?.totalAmount ?? 0;
+  }
+
+  protected latestSummaryLabel(): string {
+    const row = this.earningSummary()[0];
+    return row ? this.formatPeriodLabel(row) : `No ${this.summaryPeriod()} earnings`;
+  }
+
+  protected summaryTitle(): string {
+    const label = this.periodOptions.find((option) => option.value === this.summaryPeriod())?.label ?? 'Month';
+    return `${label} wise earnings`;
+  }
+
+  protected canLoadMoreSummary(): boolean {
+    return !!this.summaryPagination()?.hasMore && !this.loadingMoreSummary();
+  }
+
+  protected canLoadMoreEarnings(): boolean {
+    return !!this.earningPagination()?.hasMore && !this.loadingMoreEarnings();
   }
 
   protected selectedCurrencyCode(): string {
@@ -166,6 +200,8 @@ export class Earnings implements OnInit {
       next: (response) => {
         const earning = response.data.earning;
         if (earning) this.earnings.update((earnings) => [earning, ...earnings]);
+        this.loadSummary(true);
+        this.loadEarnings(true);
         this.form.patchValue({ amount: null, description: '', notes: '' });
         this.snackBar.open('Earning added', 'Close', { duration: 2500 });
       },
@@ -177,22 +213,93 @@ export class Earnings implements OnInit {
     return this.datePipe.transform(date, 'MMM d') ?? '';
   }
 
+  protected formatPeriodLabel(row: EarningSummaryRow): string {
+    if (row.period === 'year') return row.periodKey;
+    if (row.period === 'month') {
+      const [year, month] = row.periodKey.split('-').map(Number);
+      return this.datePipe.transform(new Date(year, month - 1, 1), 'MMM y') ?? row.periodKey;
+    }
+    if (row.period === 'week') {
+      const [year, week] = row.periodKey.split('-W');
+      return `Week ${Number(week)}, ${year}`;
+    }
+    return this.datePipe.transform(row.periodKey, 'MMM d, y') ?? row.periodKey;
+  }
+
+  protected changeSummaryPeriod(period: EarningPeriod): void {
+    if (this.summaryPeriod() === period) return;
+    this.summaryPeriod.set(period);
+    this.loadSummary(true);
+  }
+
+  protected loadMoreSummary(): void {
+    const pagination = this.summaryPagination();
+    if (!pagination?.hasMore) return;
+    this.loadSummary(false, pagination.page + 1);
+  }
+
+  protected loadMoreEarnings(): void {
+    const pagination = this.earningPagination();
+    if (!pagination?.hasMore) return;
+    this.loadEarnings(false, pagination.page + 1);
+  }
+
   private loadData(): void {
     this.loading.set(true);
     forkJoin({
       categories: this.earningApi.getEarningCategories(),
-      earnings: this.earningApi.getEarnings(),
+      earnings: this.earningApi.getEarnings({ page: 1, limit: this.earningLimit }),
+      summary: this.earningApi.getEarningSummary({ period: this.summaryPeriod(), page: 1, limit: this.summaryLimit }),
       countries: this.expenseApi.getUniqueCurrencyCountries(),
     }).pipe(
       take(1),
       finalize(() => this.loading.set(false))
     ).subscribe({
-      next: ({ categories, earnings, countries }) => {
+      next: ({ categories, earnings, summary, countries }) => {
         const loadedCountries = countries.data.countries ?? [];
         this.categories.set(categories.data.earningCategories ?? []);
         this.earnings.set(earnings.data.earnings ?? []);
+        this.earningPagination.set(earnings.data.pagination ?? null);
+        this.earningSummary.set(summary.data.rows ?? []);
+        this.summaryPagination.set(summary.data.pagination ?? null);
         this.countries.set(loadedCountries);
         this.setDefaultCurrencyCountry(loadedCountries);
+      },
+      error: () => this.snackBar.open('Could not load earnings', 'Close', { duration: 2500 }),
+    });
+  }
+
+  private loadSummary(reset: boolean, page = 1): void {
+    const loadingSignal = reset ? this.loading : this.loadingMoreSummary;
+    loadingSignal.set(true);
+    this.earningApi.getEarningSummary({
+      period: this.summaryPeriod(),
+      page,
+      limit: this.summaryLimit,
+    }).pipe(
+      take(1),
+      finalize(() => loadingSignal.set(false))
+    ).subscribe({
+      next: (response) => {
+        const rows = response.data.rows ?? [];
+        this.earningSummary.update((existing) => reset ? rows : [...existing, ...rows]);
+        this.summaryPagination.set(response.data.pagination ?? null);
+      },
+      error: () => this.snackBar.open('Could not load earning summary', 'Close', { duration: 2500 }),
+    });
+  }
+
+  private loadEarnings(reset: boolean, page = 1): void {
+    const loadingSignal = reset ? this.loading : this.loadingMoreEarnings;
+    loadingSignal.set(true);
+    this.earningApi.getEarnings({ page, limit: this.earningLimit }).pipe(
+      take(1),
+      finalize(() => loadingSignal.set(false))
+    ).subscribe({
+      next: (response) => {
+        const earnings = response.data.earnings ?? [];
+        this.earnings.update((existing) => reset ? earnings : [...existing, ...earnings]);
+        this.earningPagination.set(response.data.pagination ?? null);
       },
       error: () => this.snackBar.open('Could not load earnings', 'Close', { duration: 2500 }),
     });

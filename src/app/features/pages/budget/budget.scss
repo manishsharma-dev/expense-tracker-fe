@@ -122,24 +122,78 @@
   }
 }
 
-.category-list {
+.category-editor {
   display: grid;
-  gap: 10px;
-  max-height: 480px;
-  overflow: auto;
-  padding-right: 2px;
-  -webkit-overflow-scrolling: touch;
+  grid-template-columns: minmax(180px, 1fr) minmax(140px, 220px) auto;
+  align-items: start;
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
-.category-row {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) minmax(140px, 190px);
+.add-category-button {
+  min-height: 56px;
+  --mdc-filled-button-container-shape: 8px;
+}
+
+.category-option {
+  display: inline-flex;
   align-items: center;
-  gap: 12px;
-  padding: 10px 12px;
+  gap: 10px;
+  width: 100%;
+  min-width: 0;
+
+  mat-icon {
+    flex: 0 0 auto;
+    color: var(--mat-sys-primary);
+  }
+
+  span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.selected-category {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  max-width: 100%;
+
+  mat-icon {
+    flex: 0 0 auto;
+    color: var(--mat-sys-primary);
+  }
+
+  span {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+}
+
+.budget-table-wrap {
   border: 1px solid var(--mat-sys-outline-variant);
   border-radius: 8px;
+  overflow: auto;
   background: var(--mat-sys-surface-container-lowest, var(--mat-sys-surface));
+}
+
+.budget-table {
+  width: 100%;
+  min-width: 760px;
+  background: transparent;
+
+  th {
+    color: var(--mat-sys-on-surface-variant);
+    font-size: 12px;
+    font-weight: 800;
+  }
+
+  td {
+    font-weight: 650;
+  }
 }
 
 .category-label {
@@ -179,8 +233,78 @@
   width: 100%;
 }
 
+.remaining-negative {
+  color: var(--mat-sys-error);
+  font-weight: 800;
+}
+
+.utilization-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 116px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  font-weight: 800;
+
+  small {
+    font-size: 11px;
+    font-weight: 750;
+  }
+}
+
+.utilization--minimal {
+  color: #4b5563;
+  background: #f3f4f6;
+}
+
+.utilization--low {
+  color: #047857;
+  background: #d1fae5;
+}
+
+.utilization--medium {
+  color: #92400e;
+  background: #fef3c7;
+}
+
+.utilization--high {
+  color: #c2410c;
+  background: #ffedd5;
+}
+
+.utilization--over {
+  color: #b91c1c;
+  background: #fee2e2;
+}
+
+.row-actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.empty-state {
+  display: grid;
+  place-items: center;
+  gap: 8px;
+  padding: 32px 18px;
+  border: 1px dashed var(--mat-sys-outline-variant);
+  border-radius: 8px;
+  color: var(--mat-sys-on-surface-variant);
+  text-align: center;
+
+  mat-icon {
+    color: var(--mat-sys-primary);
+  }
+
+  strong {
+    color: var(--mat-sys-on-surface);
+  }
+}
+
 :host ::ng-deep .summary-grid .mat-mdc-form-field-subscript-wrapper,
-:host ::ng-deep .category-row .mat-mdc-form-field-subscript-wrapper {
+:host ::ng-deep .category-editor .mat-mdc-form-field-subscript-wrapper {
   display: none;
 }
 
@@ -211,12 +335,78 @@
   }
 
   .summary-grid,
-  .category-row {
+  .category-editor {
     grid-template-columns: 1fr;
   }
 
-  .category-list {
-    max-height: none;
+  .budget-table-wrap {
+    border: 0;
+    overflow: visible;
+    background: transparent;
+  }
+
+  .budget-table {
+    min-width: 0;
+
+    thead {
+      display: none;
+    }
+
+    tr,
+    td {
+      display: block;
+    }
+
+    tr.mat-mdc-row {
+      height: auto;
+      margin-bottom: 12px;
+      padding: 12px;
+      border: 1px solid var(--mat-sys-outline-variant);
+      border-radius: 8px;
+      background: var(--mat-sys-surface-container-lowest, var(--mat-sys-surface));
+    }
+
+    td.mat-mdc-cell {
+      min-height: 32px;
+      padding: 6px 0;
+      border-bottom: 0;
+    }
+
+    td.mat-column-set::before {
+      content: 'Set';
+    }
+
+    td.mat-column-used::before {
+      content: 'Used';
+    }
+
+    td.mat-column-remaining::before {
+      content: 'Remaining';
+    }
+
+    td.mat-column-utilization::before {
+      content: 'Utilization';
+    }
+
+    td.mat-column-set,
+    td.mat-column-used,
+    td.mat-column-remaining,
+    td.mat-column-utilization {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+
+      &::before {
+        color: var(--mat-sys-on-surface-variant);
+        font-size: 12px;
+        font-weight: 800;
+      }
+    }
+
+    td.mat-column-actions {
+      padding-top: 8px;
+    }
   }
 
   .section-title-row {

@@ -98,9 +98,51 @@
     <aside class="summary-stack">
       <mat-card class="summary-card" appearance="outlined">
         <mat-card-content>
-          <span>Total Earnings</span>
-          <strong>{{ totalEarned() | currency:selectedCurrencyCode():'symbol':'1.0-0' }}</strong>
-          <small>{{ earnings().length }} records</small>
+          <span>{{ latestSummaryLabel() }}</span>
+          <strong>{{ latestSummaryTotal() | currency:selectedCurrencyCode():'symbol':'1.0-0' }}</strong>
+          <small>{{ summaryTitle() }}</small>
+        </mat-card-content>
+      </mat-card>
+
+      <mat-card class="list-card" appearance="outlined">
+        <mat-card-header>
+          <mat-card-title>Earning Summary</mat-card-title>
+        </mat-card-header>
+        <mat-card-content>
+          <mat-button-toggle-group
+            class="period-toggle"
+            [value]="summaryPeriod()"
+            aria-label="Earning summary period"
+            (valueChange)="changeSummaryPeriod($event)"
+          >
+            @for (option of periodOptions; track option.value) {
+              <mat-button-toggle [value]="option.value">{{ option.label }}</mat-button-toggle>
+            }
+          </mat-button-toggle-group>
+
+          <div class="summary-list">
+            @for (row of earningSummary(); track row.periodKey) {
+              <div class="summary-row">
+                <span>
+                  <strong>{{ formatPeriodLabel(row) }}</strong>
+                  <small>{{ row.count }} records</small>
+                </span>
+                <b>{{ row.totalAmount | currency:selectedCurrencyCode():'symbol':'1.0-0' }}</b>
+              </div>
+            } @empty {
+              <p class="empty-text">No earning summary available yet.</p>
+            }
+          </div>
+
+          @if (summaryPagination()?.hasMore) {
+            <button mat-button type="button" class="load-more-button" [disabled]="loadingMoreSummary()" (click)="loadMoreSummary()">
+              @if (loadingMoreSummary()) {
+                Loading...
+              } @else {
+                View more
+              }
+            </button>
+          }
         </mat-card-content>
       </mat-card>
 
@@ -125,6 +167,16 @@
               <p class="empty-text">No earnings added yet.</p>
             }
           </div>
+
+          @if (earningPagination()?.hasMore) {
+            <button mat-button type="button" class="load-more-button" [disabled]="loadingMoreEarnings()" (click)="loadMoreEarnings()">
+              @if (loadingMoreEarnings()) {
+                Loading...
+              } @else {
+                View more
+              }
+            </button>
+          }
         </mat-card-content>
       </mat-card>
     </aside>
