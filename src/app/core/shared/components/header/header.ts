@@ -8,6 +8,7 @@ import { Router, RouterLink, RouterLinkActive } from '@angular/router';
 import { finalize, take } from 'rxjs';
 import { AuthService as AuthApiService } from '../../../services/apis/auth.service';
 import { AuthService as AuthStateService } from '../../../services/auth';
+import { AuthSyncService } from '../../../services/auth-sync';
 import { ExpenseReminderService } from '../../../services/expense-reminder';
 import { ThemeService } from '../../../services/theme';
 import { ConfirmDialog } from '../confirm-dialog/confirm-dialog';
@@ -33,6 +34,7 @@ export class Header {
   private readonly themeService = inject(ThemeService);
   private readonly authApiService = inject(AuthApiService);
   private readonly authStateService = inject(AuthStateService);
+  private readonly authSync = inject(AuthSyncService);
   private readonly expenseReminder = inject(ExpenseReminderService);
   private readonly dialog = inject(MatDialog);
   private readonly router = inject(Router);
@@ -110,6 +112,7 @@ export class Header {
 
   private completeLogout(): void {
     this.authStateService.logout();
+    this.authSync.announceLogout();
     this.router.navigate(['/auth/login']);
   }
 }

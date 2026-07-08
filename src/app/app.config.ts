@@ -10,6 +10,7 @@ import { apiInterceptor } from './core/interceptors/api-interceptor';
 import { HttpClient } from '@angular/common/http';
 import { Config } from './core/services/config';
 import { firstValueFrom } from 'rxjs';
+import { AuthSyncService } from './core/services/auth-sync';
 
 function loadConfig(http: HttpClient, config: Config) {
   return firstValueFrom(http.get<{ apiBaseUrl: string }>('/api/config'))
@@ -49,5 +50,6 @@ export const appConfig: ApplicationConfig = {
     },
     provideNativeDateAdapter(),
     provideAppInitializer(() => loadConfig(inject(HttpClient), inject(Config))),
+    provideAppInitializer(() => inject(AuthSyncService).init()),
   ],
 };
