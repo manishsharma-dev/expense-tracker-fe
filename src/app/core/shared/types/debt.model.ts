@@ -57,6 +57,29 @@ export type DebtDetailResponse = {
   transactions: DebtTransaction[];
 };
 
+export type DebtHistoryResponse = {
+  transactions: DebtTransaction[];
+  summary: {
+    charges: number;
+    payments: number;
+    net: number;
+  };
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    hasMore?: boolean;
+  };
+};
+
+export type DebtHistoryQuery = {
+  page?: number;
+  limit?: number;
+  startDate?: string;
+  endDate?: string;
+};
+
 export type DebtAccountPayload = {
   name: string;
   type: DebtAccountType;

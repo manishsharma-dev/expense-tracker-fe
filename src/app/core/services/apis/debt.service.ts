@@ -5,6 +5,8 @@ import {
   DebtAccount,
   DebtAccountPayload,
   DebtDetailResponse,
+  DebtHistoryQuery,
+  DebtHistoryResponse,
   DebtListResponse,
   DebtTransaction,
   DebtTransactionPayload,
@@ -26,6 +28,14 @@ export class DebtApiService {
 
   getDebtAccount(accountId: string) {
     return this.api.get<CommonResponse<DebtDetailResponse>>(`debts/${accountId}`);
+  }
+
+  getDebtHistory(accountId: string, query: DebtHistoryQuery = {}) {
+    const params = Object.entries(query).reduce<Record<string, string>>((acc, [key, value]) => {
+      if (value !== undefined && value !== null && value !== '') acc[key] = String(value);
+      return acc;
+    }, {});
+    return this.api.get<CommonResponse<DebtHistoryResponse>>(`debts/${accountId}/history`, params);
   }
 
   recordCharge(accountId: string, payload: DebtTransactionPayload) {

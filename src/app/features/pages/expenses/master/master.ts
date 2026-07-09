@@ -122,7 +122,7 @@ export class Master implements OnInit, AfterViewInit {
     this.categoryControl.setValue('', { emitEvent: false });
     this.paymentMethodControl.setValue('', { emitEvent: false });
     this.startDateControl.setValue(this.currentMonthStart(), { emitEvent: false });
-    this.endDateControl.setValue(this.currentMonthEnd(), { emitEvent: false });
+    this.endDateControl.setValue(new Date(), { emitEvent: false });
     if (this.paginator) this.paginator.pageIndex = 0;
     this.loadExpenses();
   }
@@ -289,10 +289,5 @@ export class Master implements OnInit, AfterViewInit {
   private currentMonthStart(): Date {
     const now = new Date();
     return new Date(now.getFullYear(), now.getMonth(), 1);
-  }
-
-  private currentMonthEnd(): Date {
-    const now = new Date();
-    return new Date(now.getFullYear(), now.getMonth() + 1, 0);
   }
 }

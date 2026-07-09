@@ -14,6 +14,7 @@ import { MatInputModule } from '@angular/material/input';
 import { MatProgressBarModule } from '@angular/material/progress-bar';
 import { MatSelectModule } from '@angular/material/select';
 import { MatSnackBar, MatSnackBarModule } from '@angular/material/snack-bar';
+import { Router } from '@angular/router';
 import { finalize, forkJoin, take } from 'rxjs';
 import { DebtApiService } from 'app/core/services/apis/debt.service';
 import { ExpenseApiService } from 'app/core/services/apis/expense.service';
@@ -22,6 +23,8 @@ import {
   DebtAccount,
   DebtAccountPayload,
   DebtAccountType,
+  DebtHistoryResponse,
+  DebtTransaction,
   DebtTransactionPayload,
 } from 'app/core/shared/types/debt.model';
 import { Country, PaymentMethod } from 'app/core/shared/types/expense.model';
@@ -167,6 +170,15 @@ export class Debts implements OnInit {
     });
   }
 
+  protected viewHistory(account: DebtAccount): void {
+    this.dialog.open(DebtHistoryDialog, {
+      width: '760px',
+      maxWidth: 'calc(100vw - 24px)',
+      autoFocus: false,
+      data: { account },
+    });
+  }
+
   private loadData(): void {
     this.loading.set(true);
     forkJoin({
@@ -207,6 +219,366 @@ export class Debts implements OnInit {
       currency: this.currencyCode(account),
       maximumFractionDigits: 0,
     }).format(amount);
+  }
+}
+
+@Component({
+  selector: 'app-debt-history-dialog',
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    MatButtonModule,
+    MatDatepickerModule,
+    MatDialogModule,
+    MatFormFieldModule,
+    MatIconModule,
+    MatInputModule,
+    MatNativeDateModule,
+    Loader,
+  ],
+  providers: [DatePipe],
+  template: `
+    <h2 mat-dialog-title>{{ data.account.name }} history</h2>
+    <mat-dialog-content>
+      <section class="history-dialog">
+        @if (loading()) {
+          <app-loader [overlay]="true" text="Loading history..." />
+        }
+
+        <form class="history-filters" [formGroup]="filters">
+          <mat-form-field appearance="outline">
+            <mat-label>From</mat-label>
+            <input
+              matInput
+              formControlName="startDate"
+              [matDatepicker]="fromPicker"
+              [max]="filters.controls.endDate.value || maxDate"
+              readonly
+              (click)="fromPicker.open()"
+            />
+            <mat-datepicker-toggle matIconSuffix [for]="fromPicker"></mat-datepicker-toggle>
+            <mat-datepicker #fromPicker></mat-datepicker>
+            @if (dateRangeInvalid()) {
+              <mat-error>From date must be before To date</mat-error>
+            }
+          </mat-form-field>
+
+          <mat-form-field appearance="outline">
+            <mat-label>To</mat-label>
+            <input
+              matInput
+              formControlName="endDate"
+              [matDatepicker]="toPicker"
+              [min]="filters.controls.startDate.value"
+              [max]="maxDate"
+              readonly
+              (click)="toPicker.open()"
+            />
+            <mat-datepicker-toggle matIconSuffix [for]="toPicker"></mat-datepicker-toggle>
+            <mat-datepicker #toPicker></mat-datepicker>
+            @if (dateRangeInvalid()) {
+              <mat-error>To date must be after From date</mat-error>
+            }
+          </mat-form-field>
+
+          <div class="history-filter-actions">
+            <button mat-flat-button type="button" (click)="applyFilters()">Apply</button>
+            <button mat-button type="button" (click)="resetFilters()">Reset</button>
+          </div>
+        </form>
+
+        @if (dateRangeInvalid()) {
+          <p class="history-error">From date cannot be after To date.</p>
+        }
+
+        <div class="history-summary">
+          <span>
+            <small>Expenses / charges</small>
+            <strong class="amount-increase">{{ (history()?.summary?.charges || 0) | currency:currencyCode():'symbol':'1.0-0' }}</strong>
+          </span>
+          <span>
+            <small>Paid</small>
+            <strong class="amount-decrease">{{ (history()?.summary?.payments || 0) | currency:currencyCode():'symbol':'1.0-0' }}</strong>
+          </span>
+          <span>
+            <small>Net change</small>
+            <strong [class.amount-increase]="(history()?.summary?.net || 0) > 0" [class.amount-decrease]="(history()?.summary?.net || 0) < 0">
+              {{ (history()?.summary?.net || 0) | currency:currencyCode():'symbol':'1.0-0' }}
+            </strong>
+          </span>
+        </div>
+
+        <div class="history-list">
+          @for (transaction of transactions(); track transaction._id) {
+            <article class="history-row" [class.history-row--increase]="transaction.direction === 'increase'" [class.history-row--decrease]="transaction.direction === 'decrease'">
+              <span class="history-row__icon">
+                <mat-icon aria-hidden="true">{{ transaction.direction === 'increase' ? 'north_east' : 'south_west' }}</mat-icon>
+              </span>
+              <span class="history-row__main">
+                <strong>{{ transaction.description || transactionLabel(transaction) }}</strong>
+                <small>{{ formatDate(transaction.date) }} · {{ transactionLabel(transaction) }}</small>
+              </span>
+              <b [class.amount-increase]="transaction.direction === 'increase'" [class.amount-decrease]="transaction.direction === 'decrease'">
+                {{ transaction.amount | currency:currencyCode():'symbol':'1.0-0' }}
+              </b>
+              @if (transaction.sourceExpense?._id) {
+                <button mat-button type="button" (click)="viewExpense(transaction)">
+                  View
+                </button>
+              }
+            </article>
+          } @empty {
+            <p class="empty-history">No debt transactions found for this period.</p>
+          }
+        </div>
+
+        @if (history()?.pagination?.hasMore) {
+          <button mat-button type="button" class="load-more-button" [disabled]="loadingMore()" (click)="loadMore()">
+            @if (loadingMore()) {
+              Loading...
+            } @else {
+              View more
+            }
+          </button>
+        }
+      </section>
+    </mat-dialog-content>
+    <mat-dialog-actions align="end">
+      <button mat-button type="button" mat-dialog-close>Close</button>
+    </mat-dialog-actions>
+  `,
+  styles: [`
+    .history-dialog {
+      position: relative;
+      display: grid;
+      gap: 14px;
+      min-height: 220px;
+      padding-top: 4px;
+    }
+
+    .history-filters {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr)) auto;
+      align-items: start;
+      gap: 12px;
+    }
+
+    .history-filter-actions {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-height: 56px;
+    }
+
+    .history-error {
+      margin: -6px 0 0;
+      color: var(--mat-sys-error);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .history-summary {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .history-summary span {
+      display: grid;
+      gap: 5px;
+      padding: 12px;
+      border: 1px solid var(--mat-sys-outline-variant);
+      border-radius: 8px;
+      background: var(--mat-sys-surface-container-lowest, var(--mat-sys-surface));
+    }
+
+    .history-summary small,
+    .history-row small {
+      color: var(--mat-sys-on-surface-variant);
+    }
+
+    .history-summary strong {
+      font-size: 20px;
+      font-weight: 850;
+    }
+
+    .history-list {
+      display: grid;
+      gap: 10px;
+      max-height: 420px;
+      overflow: auto;
+      padding-right: 2px;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .history-row {
+      display: grid;
+      grid-template-columns: 38px minmax(0, 1fr) auto auto;
+      align-items: center;
+      gap: 10px;
+      padding: 10px;
+      border: 1px solid var(--mat-sys-outline-variant);
+      border-radius: 8px;
+      background: var(--mat-sys-surface-container-lowest, var(--mat-sys-surface));
+    }
+
+    .history-row__icon {
+      display: grid;
+      place-items: center;
+      width: 36px;
+      height: 36px;
+      border-radius: 8px;
+    }
+
+    .history-row--increase .history-row__icon {
+      background: color-mix(in srgb, var(--mat-sys-error) 14%, transparent);
+      color: var(--mat-sys-error);
+    }
+
+    .history-row--decrease .history-row__icon {
+      background: color-mix(in srgb, #16a34a 16%, transparent);
+      color: #16a34a;
+    }
+
+    .history-row__main {
+      display: grid;
+      gap: 2px;
+      min-width: 0;
+    }
+
+    .history-row__main strong,
+    .history-row__main small {
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .amount-increase {
+      color: var(--mat-sys-error);
+    }
+
+    .amount-decrease {
+      color: #16a34a;
+    }
+
+    .empty-history {
+      margin: 0;
+      padding: 24px 12px;
+      color: var(--mat-sys-on-surface-variant);
+      text-align: center;
+    }
+
+    .load-more-button {
+      width: 100%;
+    }
+
+    @media (max-width: 640px) {
+      .history-filters,
+      .history-summary,
+      .history-row {
+        grid-template-columns: 1fr;
+      }
+
+      .history-filter-actions {
+        min-height: 0;
+      }
+
+      .history-row {
+        align-items: stretch;
+      }
+    }
+  `],
+})
+class DebtHistoryDialog implements OnInit {
+  private readonly debtApi = inject(DebtApiService);
+  private readonly router = inject(Router);
+  private readonly dialogRef = inject(MatDialogRef<DebtHistoryDialog>);
+  private readonly datePipe = inject(DatePipe);
+  protected readonly history = signal<DebtHistoryResponse | null>(null);
+  protected readonly transactions = signal<DebtTransaction[]>([]);
+  protected readonly loading = signal(false);
+  protected readonly loadingMore = signal(false);
+  protected readonly limit = 10;
+  protected readonly maxDate = new Date();
+  protected readonly filters = new FormGroup({
+    startDate: new FormControl<Date | null>(null),
+    endDate: new FormControl<Date | null>(new Date()),
+  });
+
+  constructor(@Inject(MAT_DIALOG_DATA) protected readonly data: { account: DebtAccount }) {}
+
+  ngOnInit(): void {
+    this.loadHistory(true);
+  }
+
+  protected currencyCode(): string {
+    return this.data.account.country?.currency?.code ?? 'INR';
+  }
+
+  protected dateRangeInvalid(): boolean {
+    const start = this.filters.controls.startDate.value;
+    const end = this.filters.controls.endDate.value;
+    return !!start && !!end && start > end;
+  }
+
+  protected applyFilters(): void {
+    this.filters.markAllAsTouched();
+    if (this.dateRangeInvalid()) return;
+    this.loadHistory(true);
+  }
+
+  protected resetFilters(): void {
+    this.filters.reset({ startDate: null, endDate: new Date() });
+    this.loadHistory(true);
+  }
+
+  protected loadMore(): void {
+    const pagination = this.history()?.pagination;
+    if (!pagination?.hasMore) return;
+    this.loadHistory(false, pagination.page + 1);
+  }
+
+  protected viewExpense(transaction: DebtTransaction): void {
+    const expenseId = transaction.sourceExpense?._id;
+    if (!expenseId) return;
+    this.dialogRef.close();
+    this.router.navigate(['/expenses', expenseId]);
+  }
+
+  protected formatDate(date: string): string {
+    return this.datePipe.transform(date, 'MMM d, y') ?? '';
+  }
+
+  protected transactionLabel(transaction: DebtTransaction): string {
+    const labels: Record<DebtTransaction['type'], string> = {
+      opening_balance: 'Opening balance',
+      charge: transaction.sourceExpense ? 'Expense' : 'Charge',
+      payment: 'Payment',
+      interest: 'Interest',
+      fee: 'Fee',
+      adjustment: 'Adjustment',
+    };
+    return labels[transaction.type] ?? 'Transaction';
+  }
+
+  private loadHistory(reset: boolean, page = 1): void {
+    const loadingSignal = reset ? this.loading : this.loadingMore;
+    loadingSignal.set(true);
+    this.debtApi.getDebtHistory(this.data.account._id, {
+      page,
+      limit: this.limit,
+      startDate: this.filters.controls.startDate.value ? formatDateOnly(this.filters.controls.startDate.value) : undefined,
+      endDate: this.filters.controls.endDate.value ? formatDateOnly(this.filters.controls.endDate.value) : undefined,
+    }).pipe(
+      take(1),
+      finalize(() => loadingSignal.set(false))
+    ).subscribe({
+      next: (response) => {
+        this.history.set(response.data);
+        const rows = response.data.transactions ?? [];
+        this.transactions.update((existing) => reset ? rows : [...existing, ...rows]);
+      },
+    });
   }
 }
 

@@ -84,10 +84,16 @@
 
             <div class="debt-card__footer">
               <small>Updated {{ updatedLabel(account) }}</small>
-              <button mat-stroked-button type="button" (click)="recordPayment(account)">
-                <mat-icon aria-hidden="true">payments</mat-icon>
-                Pay
-              </button>
+              <span class="debt-card__actions">
+                <button mat-stroked-button type="button" (click)="viewHistory(account)">
+                  <mat-icon aria-hidden="true">history</mat-icon>
+                  History
+                </button>
+                <button mat-stroked-button type="button" (click)="recordPayment(account)">
+                  <mat-icon aria-hidden="true">payments</mat-icon>
+                  Pay
+                </button>
+              </span>
             </div>
           </article>
         } @empty {

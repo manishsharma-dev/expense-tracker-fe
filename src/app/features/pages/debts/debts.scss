@@ -194,6 +194,14 @@
   }
 }
 
+.debt-card__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
 .empty-state {
   grid-column: 1 / -1;
   display: grid;
@@ -315,5 +323,18 @@
     border-left: 0;
     border-radius: 0;
     box-shadow: none;
+  }
+
+  .debt-card__footer {
+    display: grid;
+    align-items: stretch;
+  }
+
+  .debt-card__actions {
+    justify-content: stretch;
+
+    button {
+      flex: 1 1 auto;
+    }
   }
 }
