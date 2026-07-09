@@ -133,12 +133,29 @@
 .merchant-suggestion {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
   max-width: 100%;
-  padding: 6px 12px 6px 10px;
+  overflow: hidden;
   border: 1px solid var(--mat-sys-outline-variant);
   background: var(--mat-sys-surface-container-lowest, var(--mat-sys-surface));
   color: var(--mat-sys-on-surface);
+  text-align: left;
+
+  &:hover {
+    border-color: var(--mat-sys-primary);
+    background: var(--mat-sys-surface-container);
+  }
+}
+
+.merchant-suggestion__apply {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: 100%;
+  padding: 6px 10px;
+  border: 0;
+  background: transparent;
+  color: inherit;
   cursor: pointer;
   text-align: left;
 
@@ -170,10 +187,30 @@
     color: var(--mat-sys-on-surface-variant);
     font-size: 11px;
   }
+}
+
+.merchant-suggestion__delete {
+  display: grid;
+  place-items: center;
+  flex: 0 0 30px;
+  width: 30px;
+  height: 100%;
+  min-height: 38px;
+  border: 0;
+  border-left: 1px solid var(--mat-sys-outline-variant);
+  background: transparent;
+  color: var(--mat-sys-on-surface-variant);
+  cursor: pointer;
+
+  mat-icon {
+    width: 16px;
+    height: 16px;
+    font-size: 16px;
+  }
 
   &:hover {
-    border-color: var(--mat-sys-primary);
-    background: var(--mat-sys-surface-container);
+    color: var(--mat-sys-error);
+    background: color-mix(in srgb, var(--mat-sys-error) 10%, transparent);
   }
 }
 
@@ -792,6 +829,10 @@
 
   .merchant-suggestion {
     width: 100%;
+  }
+
+  .merchant-suggestion__apply {
+    flex: 1 1 auto;
   }
 
   .category-grid {

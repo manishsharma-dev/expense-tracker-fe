@@ -169,19 +169,29 @@
                 <span class="merchant-suggestions__loading">Checking saved defaults...</span>
               } @else {
                 @for (suggestion of merchantSuggestions(); track suggestion._id) {
-                  <button type="button" class="merchant-suggestion" (click)="applyMerchantSuggestion(suggestion)">
-                    <mat-icon aria-hidden="true">{{ suggestion.category.icon || 'category' }}</mat-icon>
-                    <span>
-                      <strong>{{ suggestion.merchantName }}</strong>
-                      <small>
-                        {{ suggestion.category.name }}
-                        @if (suggestion.subCategory) {
-                          &middot; {{ suggestion.subCategory.name }}
-                        }
-                        &middot; {{ suggestion.paymentMethod.name }}
-                      </small>
-                    </span>
-                  </button>
+                  <span class="merchant-suggestion">
+                    <button type="button" class="merchant-suggestion__apply" (click)="applyMerchantSuggestion(suggestion)">
+                      <mat-icon aria-hidden="true">{{ suggestion.category.icon || 'category' }}</mat-icon>
+                      <span>
+                        <strong>{{ suggestion.merchantName }}</strong>
+                        <small>
+                          {{ suggestion.category.name }}
+                          @if (suggestion.subCategory) {
+                            &middot; {{ suggestion.subCategory.name }}
+                          }
+                          &middot; {{ suggestion.paymentMethod.name }}
+                        </small>
+                      </span>
+                    </button>
+                    <button
+                      type="button"
+                      class="merchant-suggestion__delete"
+                      aria-label="Delete merchant suggestion"
+                      (click)="deleteMerchantSuggestion(suggestion, $event)"
+                    >
+                      <mat-icon aria-hidden="true">close</mat-icon>
+                    </button>
+                  </span>
                 }
               }
             </div>

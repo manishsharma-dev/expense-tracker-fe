@@ -69,6 +69,10 @@ export class ExpenseApiService {
     return this.api.get<CommonResponse<MerchantRuleSuggestionResponse>>('merchant-rules/suggestions', { q: query });
   }
 
+  deleteMerchantRuleSuggestion(suggestionId: string) {
+    return this.api.delete<CommonResponse<null>>(`merchant-rules/suggestions/${suggestionId}`);
+  }
+
   createPaymentMethod(
     paymentMethod: Pick<PaymentMethod, 'name' | 'type' | 'lastFour' | 'upiId' | 'nickname' | 'icon'> & {
       provider?: string;

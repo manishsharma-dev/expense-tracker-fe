@@ -263,11 +263,43 @@ export class Create implements OnInit, OnDestroy {
   }
 
   protected applyMerchantSuggestion(suggestion: MerchantRuleSuggestion): void {
+    this.form.controls.description.setValue(suggestion.merchantName);
     this.form.controls.category.setValue(suggestion.category?._id ?? '');
     this.selectedCategory.set(suggestion.category?._id ?? '');
     this.form.controls.subCategory.setValue(suggestion.subCategory?._id ?? '');
     this.form.controls.paymentMethod.setValue(suggestion.paymentMethod?._id ?? '');
     this.snackBar.open('Suggestion applied', 'Close', { duration: 1800 });
+  }
+
+  protected deleteMerchantSuggestion(suggestion: MerchantRuleSuggestion, event: Event): void {
+    event.stopPropagation();
+    event.preventDefault();
+
+    this.dialog.open(ConfirmDialog, {
+      width: '360px',
+      maxWidth: 'calc(100vw - 32px)',
+      autoFocus: false,
+      restoreFocus: false,
+      data: {
+        title: 'Delete suggestion?',
+        message: `Remove "${suggestion.merchantName}" from your saved suggestions?`,
+        cancelText: 'Cancel',
+        confirmText: 'Delete',
+        confirmIcon: 'delete',
+      },
+    }).afterClosed().pipe(take(1)).subscribe((confirmed) => {
+      if (!confirmed) return;
+
+      this.expenseApi.deleteMerchantRuleSuggestion(suggestion._id).pipe(take(1)).subscribe({
+        next: () => {
+          this.merchantSuggestions.update((suggestions) => suggestions.filter((item) => item._id !== suggestion._id));
+          this.snackBar.open('Suggestion deleted', 'Close', { duration: 1800 });
+        },
+        error: (error) => {
+          this.snackBar.open(error?.error?.message || 'Could not delete suggestion', 'Close', { duration: 2500 });
+        },
+      });
+    });
   }
 
   protected getPaymentMethodTypeLabel(type: PaymentMethod['type']): string {
