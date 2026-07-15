@@ -2,27 +2,6 @@
   color: var(--mat-sys-on-surface);
 }
 
-.page-header {
-  display: flex;
-  align-items: flex-start;
-  justify-content: space-between;
-  gap: 18px;
-  margin-bottom: 24px;
-
-  h1 {
-    margin: 0 0 6px;
-    font-size: clamp(26px, 3vw, 32px);
-    font-weight: 800;
-    line-height: 1.1;
-  }
-
-  p {
-    margin: 0;
-    color: var(--mat-sys-on-surface-variant);
-    font-size: 15px;
-  }
-}
-
 .add-button {
   flex: 0 0 auto;
   --mdc-filled-button-container-shape: 8px;

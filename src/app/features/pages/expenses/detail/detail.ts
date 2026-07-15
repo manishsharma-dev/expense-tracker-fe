@@ -4,6 +4,5 @@ import { Component } from '@angular/core';
   selector: 'app-detail',
   imports: [],
   templateUrl: './detail.html',
-  styleUrl: './detail.scss',
 })
 export class Detail {}

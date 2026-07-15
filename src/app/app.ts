@@ -5,8 +5,7 @@ import { ThemeService } from './core/services/theme';
 @Component({
   selector: 'app-root',
   imports: [RouterOutlet],
-  templateUrl: './app.html',
-  styleUrl: './app.scss'
+  templateUrl: './app.html'
 })
 export class App {
   protected readonly title = signal('expense-tracker-fe');

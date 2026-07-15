@@ -187,6 +187,56 @@
                 <tr mat-row *matRowDef="let row; columns: displayedColumns"></tr>
               </table>
             </div>
+
+            <div class="budget-mobile-list" aria-label="Category budgets">
+              @for (allocation of budgetedAllocations(); track allocation.category._id) {
+                <article class="budget-mobile-card">
+                  <div class="budget-mobile-card__header">
+                    <span class="category-label">
+                      <mat-icon aria-hidden="true">{{ allocation.category.icon || 'category' }}</mat-icon>
+                      <span>
+                        <strong>{{ allocation.category.name }}</strong>
+                        <small>{{ allocation.category.isSystem ? 'Common category' : 'Custom category' }}</small>
+                      </span>
+                    </span>
+
+                    <div class="row-actions">
+                      <button mat-icon-button type="button" aria-label="Edit category budget" (click)="editAllocation(allocation)">
+                        <mat-icon aria-hidden="true">edit</mat-icon>
+                      </button>
+                      <button mat-icon-button type="button" aria-label="Remove category budget" (click)="removeAllocation(allocation.category._id)">
+                        <mat-icon aria-hidden="true">delete</mat-icon>
+                      </button>
+                    </div>
+                  </div>
+
+                  <div class="budget-mobile-card__metrics">
+                    <span>
+                      <small>Set</small>
+                      <strong>{{ allocation.amount | currency:'INR':'symbol':'1.0-0' }}</strong>
+                    </span>
+                    <span>
+                      <small>Used</small>
+                      <strong>{{ (allocation.used || 0) | currency:'INR':'symbol':'1.0-0' }}</strong>
+                    </span>
+                    <span>
+                      <small>Remaining</small>
+                      <strong [class.remaining-negative]="(allocation.remaining || 0) < 0">
+                        {{ (allocation.remaining || 0) | currency:'INR':'symbol':'1.0-0' }}
+                      </strong>
+                    </span>
+                  </div>
+
+                  <div class="budget-mobile-card__utilization">
+                    <small>Utilization</small>
+                    <span class="utilization-pill" [ngClass]="utilizationClass(allocation)">
+                      {{ allocation.utilizationPercent || 0 }}%
+                      <small>{{ utilizationLabel(allocation) }}</small>
+                    </span>
+                  </div>
+                </article>
+              }
+            </div>
           } @else {
             <div class="empty-state">
               <mat-icon aria-hidden="true">savings</mat-icon>
