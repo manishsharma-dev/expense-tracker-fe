@@ -94,7 +94,48 @@
           "defaultConfiguration": "development"
         },
         "test": {
-          "builder": "@angular/build:unit-test"
+          "builder": "@angular/build:unit-test",
+          "options": {
+            "runner": "vitest",
+            "include": [
+              "src/app/core/services/*.spec.ts"
+            ],
+            "coverage": true,
+            "coverageReporters": [
+              "text",
+              "text-summary",
+              "html",
+              "lcov",
+              "json-summary"
+            ],
+            "coverageInclude": [
+              "src/app/core/services/api.ts",
+              "src/app/core/services/auth.ts",
+              "src/app/core/services/config.ts",
+              "src/app/core/services/theme.ts"
+            ],
+            "coverageExclude": [
+              "src/app/**/*.spec.ts",
+              "src/app/**/*.test.ts",
+              "src/app/**/*.model.ts",
+              "src/app/**/*.types.ts",
+              "src/app/core/shared/types/**",
+              "src/app/app.config*.ts",
+              "src/app/app.routes.ts",
+              "src/app/main*.ts",
+              "src/app/server.ts"
+            ],
+            "coverageThresholds": {
+              "statements": 10,
+              "branches": 10,
+              "functions": 1,
+              "lines": 8
+            },
+            "providersFile": "src/test-providers.ts",
+            "setupFiles": [
+              "src/test-setup.ts"
+            ]
+          }
         }
       }
     }
