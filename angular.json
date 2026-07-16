@@ -99,6 +99,7 @@
             "runner": "vitest",
             "include": [
               "src/app/core/services/*.spec.ts",
+              "src/app/core/services/apis/*.spec.ts",
               "src/app/core/guards/*.spec.ts",
               "src/app/core/interceptors/*.spec.ts",
               "src/app/core/shared/utils/*.spec.ts"
@@ -112,10 +113,8 @@
               "json-summary"
             ],
             "coverageInclude": [
-              "src/app/core/services/api.ts",
-              "src/app/core/services/auth.ts",
-              "src/app/core/services/config.ts",
-              "src/app/core/services/theme.ts",
+              "src/app/core/services/*.ts",
+              "src/app/core/services/apis/*.ts",
               "src/app/core/guards/*.ts",
               "src/app/core/interceptors/*.ts",
               "src/app/core/shared/utils/*.ts"

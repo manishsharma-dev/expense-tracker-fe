@@ -30,6 +30,8 @@ Raise the thresholds gradually as meaningful tests are added. A good next target
 Prioritize behavior over snapshots:
 
 - Guards and interceptors. Guards should cover allow, reject, redirect, state update, and SSR route discovery paths. Interceptors should cover request mutation, exempt routes, CSRF behavior, credentials, and SSR cookie forwarding.
+- Root services should cover state transitions, browser storage, runtime config, CSRF caching, cross-tab auth sync, notifications, and theme persistence.
+- API wrapper services should cover endpoint names, request bodies, query param filtering/stringification, and side effects such as CSRF token updates.
 - Shared utility behavior for date ranges, currency selection, and category colors.
 - Auth/login OTP flow.
 - Expense create validation and receipt scan prefilling.
