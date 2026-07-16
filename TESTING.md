@@ -21,7 +21,7 @@ Current baseline:
 - Functions: 1%
 - Lines: 8%
 
-These are intentionally low because the project already has many components but mostly generated smoke tests. The current coverage gate is scoped to stable service specs in `angular.json`. As component specs are made deterministic, add them to the `include` list and expand `coverageInclude`.
+These are intentionally low because the project already has many components but mostly generated smoke tests. The current coverage gate is scoped to stable service specs and shared utility specs in `angular.json`. As component specs are made deterministic, add them to the `include` list and expand `coverageInclude`.
 
 Raise the thresholds gradually as meaningful tests are added. A good next target is 30%, then 50%, then 70%+ for services, guards, interceptors, and critical components.
 
@@ -29,7 +29,8 @@ Raise the thresholds gradually as meaningful tests are added. A good next target
 
 Prioritize behavior over snapshots:
 
-- Guards and interceptors.
+- Guards and interceptors. Guards should cover allow, reject, redirect, state update, and SSR route discovery paths. Interceptors should cover request mutation, exempt routes, CSRF behavior, credentials, and SSR cookie forwarding.
+- Shared utility behavior for date ranges, currency selection, and category colors.
 - Auth/login OTP flow.
 - Expense create validation and receipt scan prefilling.
 - Expense list filters, pagination, edit/delete actions.
