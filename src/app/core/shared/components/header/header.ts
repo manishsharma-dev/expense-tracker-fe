@@ -63,6 +63,14 @@ export class Header {
     this.themeService.toggleTheme();
   }
 
+  protected themeIcon(): string {
+    return this.themeService.currentTheme() === 'dark-theme' ? 'light_mode' : 'dark_mode';
+  }
+
+  protected themeTooltip(): string {
+    return this.themeService.currentTheme() === 'dark-theme' ? 'Switch to light theme' : 'Switch to dark theme';
+  }
+
   protected reminderEnabled(): boolean {
     return this.expenseReminder.settings().enabled;
   }

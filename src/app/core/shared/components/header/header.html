@@ -33,8 +33,14 @@
   </nav>
 
   <div class="topbar__actions">
-    <button class="icon-btn icon-btn--theme" type="button" matTooltip="Toggle theme" (click)="toggleTheme()">
-      <mat-icon aria-hidden="true">dark_mode</mat-icon>
+    <button
+      class="icon-btn icon-btn--theme"
+      type="button"
+      [matTooltip]="themeTooltip()"
+      [attr.aria-label]="themeTooltip()"
+      (click)="toggleTheme()"
+    >
+      <mat-icon aria-hidden="true">{{ themeIcon() }}</mat-icon>
     </button>
     <button
       class="icon-btn icon-btn--notification"
